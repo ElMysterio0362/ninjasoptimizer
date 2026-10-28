@@ -319,7 +319,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
             ? $"Pronto. {report.AppliedCount} ajuste(s) aplicado(s)."
             : $"{report.AppliedCount} aplicado(s), {report.FailedCount} com falha";
         var message = "Você pode reverter cada um no histórico de alterações.";
-        if (report.RequiresRestart) message = "Reinicie o PC para concluir. " + message;
+        if (report.RequiresRestart) message = "Alguns ajustes valem depois de sair e entrar de novo na sua conta (ou reiniciar o PC). " + message;
         _dialogs.Info(title, message, lines, report.FailedCount > 0 ? DialogKind.Danger : DialogKind.Success);
     }
 

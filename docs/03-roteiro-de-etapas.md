@@ -25,6 +25,38 @@ Cada etapa só começa depois que a anterior for testada em um Windows real.
    * Verifique o ponto de restauração em `rstrui.exe` e os .reg em Configurações → *Abrir pasta de backups*.
 4. Histórico → *Desfazer* um item → confira que o valor anterior voltou. Depois *Reverter tudo*.
 
+## ✅ Etapa 2A — Sistema, privacidade e jogos
+
+14 ajustes novos, todos de registro (reversíveis item a item). Os que mudam HKCU não pedem administrador.
+
+| Id | O que faz | Risco | Perfis |
+|---|---|---|---|
+| `privacy.ads-tips` | Dicas, sugestões e apps patrocinados (ContentDeliveryManager) | Baixo | Todos |
+| `privacy.advertising-id` | ID de publicidade e experiências personalizadas | Baixo | Todos |
+| `privacy.activity-history` | Histórico de atividades (política) | Baixo | Todos |
+| `privacy.bing-search` | Bing na busca do Iniciar | Baixo | Equilibrado, Máximo, Gamer |
+| `system.background-apps` | Apps da Store em segundo plano | Médio | Máximo, Gamer |
+| `system.animations` | Animações de janela, barra de tarefas e Aero Peek | Baixo | Equilibrado, Máximo, Gamer |
+| `system.menu-delay` | Atraso dos menus 400 → 100 ms | Baixo | Equilibrado, Máximo, Gamer |
+| `system.transparency` | Efeitos de transparência | Baixo | Máximo |
+| `gaming.game-mode` | Modo de Jogo ligado | Baixo | Todos |
+| `gaming.game-bar-shortcuts` | Botão Xbox do controle não abre a Game Bar | Baixo | Máximo, Gamer |
+| `gaming.fullscreen-optimizations` | Otimizações de tela cheia desligadas | Médio | Gamer |
+| `gaming.mouse-acceleration` | Aceleração do mouse desligada | Baixo | Gamer |
+| `gaming.scheduler-priority` | Perfil "Games" do agendador multimídia | Baixo | Máximo, Gamer |
+| `gaming.sticky-keys` | Atalho Shift ×5 das Teclas de Aderência | Baixo | Gamer |
+
+Testes: cada ajuste do catálogo é aplicado e revertido automaticamente, com o registro vazio e com valores que já existiam (74 testes).
+
+### Como testar a etapa 2A no Windows
+1. Otimizar → filtro **Sistema e privacidade** e **Jogos**: confira textos, selos e toggles.
+2. Perfil **Gamer** → *Aplicar selecionadas*. Confira, por exemplo:
+   * `reg query "HKCU\Control Panel\Mouse" /v MouseSpeed` → `0`
+   * `reg query "HKCU\Software\Microsoft\GameBar" /v AutoGameModeEnabled` → `0x1`
+   * Configurações do Windows → Jogos → Modo de Jogo ligado.
+3. Saia e entre de novo na conta: animações reduzidas, busca sem resultados da web, mouse sem aceleração.
+4. *Reverter tudo* e confira que os valores voltaram (ou sumiram, se não existiam).
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

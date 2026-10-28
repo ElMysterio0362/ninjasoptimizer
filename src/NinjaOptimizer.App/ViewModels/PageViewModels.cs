@@ -51,6 +51,8 @@ public sealed partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private string _subline = "";
     [ObservableProperty] private string _lastOptimizationText = "";
     [ObservableProperty] private string _ramTypeText = "";
+    [ObservableProperty] private string _quickMoreText = "";
+    private int _quickPending;
 
     // Disco do Windows (C:)
     [ObservableProperty] private string _systemDriveLabel = "DISCO C:";
@@ -122,8 +124,12 @@ public sealed partial class DashboardViewModel : ObservableObject
 
         var applied = _optimize.AllItems.Where(i => i.IsApplied).Select(i => i.Tweak.Id).ToHashSet();
         QuickItems.Clear();
-        foreach (var t in TweakCatalog.ForProfile(QuickProfile))
+        var quick = TweakCatalog.ForProfile(QuickProfile);
+        _quickPending = quick.Count(t => !applied.Contains(t.Id));
+        // Mostra os 5 de maior impacto (pendentes primeiro); o resto vira "e mais N ajustes".
+        foreach (var t in quick.OrderBy(t => applied.Contains(t.Id)).ThenByDescending(t => t.Impact).Take(5))
             QuickItems.Add(new QuickItem(t.Name, applied.Contains(t.Id)));
+        QuickMoreText = quick.Count > 5 ? $"e mais {quick.Count - 5} ajuste(s)" : "";
 
         BuildRecommendations(applied);
         UpdateHero();
@@ -148,7 +154,7 @@ public sealed partial class DashboardViewModel : ObservableObject
         }
 
         Phase = HeroPhase.Idle;
-        var pending = QuickItems.Count(q => !q.Applied);
+        var pending = _quickPending;
         Headline = Applied == Total && Total > 0 ? "Todas as otimizações estão ativas" : $"Seu PC está {ScoreText}% otimizado";
         Subline = pending > 0
             ? $"{pending} ajuste(s) do perfil Equilibrado ainda não estão ativos. Você revisa a lista antes de aplicar."

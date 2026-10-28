@@ -105,6 +105,7 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <TextBlock Style="{StaticResource Small}" Text="{Binding QuickMoreText}" Margin="32,10,0,0" />
                         </StackPanel>
                     </Grid>
                 </Grid>
