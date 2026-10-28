@@ -147,7 +147,7 @@
         <Setter Property="Background" Value="{StaticResource Surface2Brush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="CornerRadius" Value="17" />
         <Setter Property="Padding" Value="14,8" />
         <Setter Property="Margin" Value="0,0,10,0" />
         <Setter Property="TextElement.FontSize" Value="13" />
@@ -155,7 +155,7 @@
     </Style>
     <!-- Selo de status (Normal, Alto impacto…) -->
     <Style x:Key="Pill" TargetType="Border">
-        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="10,4" />
         <Setter Property="Background" Value="{StaticResource Surface3Brush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
