@@ -1,0 +1,137 @@
+<UserControl x:Class="NinjasOptimizer.App.Views.HardwareView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <Style x:Key="LiveLabel" TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style x:Key="LiveValue" TargetType="TextBlock" BasedOn="{StaticResource Body}">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,2,0,12" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,8,20">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource SecondaryButton}" Command="{Binding CopyReportCommand}" Margin="0,0,10,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE8C8;" Margin="0,0,8,0" />
+                        <TextBlock Text="Copiar relatório" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SecondaryButton}" Command="{Binding RefreshCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" FontSize="13" Text="&#xE72C;" Margin="0,0,8,0" />
+                        <TextBlock Text="Atualizar" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Style="{StaticResource H1}" Text="Hardware" />
+                <TextBlock Style="{StaticResource Muted}" Text="Componentes detectados e leituras dos sensores em tempo real." Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,8,0">
+                <!-- ───────── Sensores ao vivo ───────── -->
+                <Border CornerRadius="12" Background="{StaticResource HeroGradient}" BorderBrush="#3344088C" BorderThickness="1" Padding="22,18,22,6"
+                        DataContext="{Binding Live}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Caption}" Text="CPU" Margin="0,0,0,10" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Uso" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding CpuLoadText}" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Temperatura" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding CpuTempText}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Style="{StaticResource Caption}" Text=" " Margin="0,0,0,10" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Clock médio" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding CpuClockText}" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Consumo" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding CpuPowerText}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Caption}" Text="GPU" Margin="0,0,0,10" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Uso" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding GpuLoadText}" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Temperatura" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding GpuTempText}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="3">
+                            <TextBlock Style="{StaticResource Caption}" Text=" " Margin="0,0,0,10" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Clock núcleo / memória" />
+                            <TextBlock Style="{StaticResource LiveValue}">
+                                <Run Text="{Binding GpuClockText, Mode=OneWay}" /><Run Text=" / " Foreground="{StaticResource TextFaintBrush}" /><Run Text="{Binding GpuMemClockText, Mode=OneWay}" />
+                            </TextBlock>
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="VRAM em uso" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding VramText}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Style="{StaticResource Caption}" Text="RAM" Margin="0,0,0,10" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Uso" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding RamLoadText}" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Em uso / total" />
+                            <TextBlock Style="{StaticResource LiveValue}" Text="{Binding RamText}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <TextBlock Style="{StaticResource Muted}" FontSize="11" Margin="2,8,0,0" Foreground="{StaticResource TextFaintBrush}"
+                           Text="Temperaturas de CPU e de discos exigem executar como administrador. Sensores indisponíveis aparecem como —." />
+
+                <!-- ───────── Inventário ───────── -->
+                <ItemsControl ItemsSource="{Binding Sections}" Margin="0,18,-14,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Columns="2" VerticalAlignment="Top" /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Card}" Margin="0,0,14,14">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                        <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource AccentSoftBrush}">
+                                            <TextBlock Style="{StaticResource Icon}" FontSize="15" HorizontalAlignment="Center" Text="{Binding Glyph}" />
+                                        </Border>
+                                        <TextBlock Style="{StaticResource H2}" FontSize="14" Text="{Binding Title}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Rows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="140" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Style="{StaticResource Muted}" FontSize="12" Text="{Binding Label}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource Body}" FontSize="12" Text="{Binding Value}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="Lendo componentes…" HorizontalAlignment="Center" Margin="0,20">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

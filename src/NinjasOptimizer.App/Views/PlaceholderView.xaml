@@ -1,0 +1,26 @@
+<UserControl x:Class="NinjasOptimizer.App.Views.PlaceholderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock Style="{StaticResource H1}" Text="{Binding Title}" />
+        <TextBlock Style="{StaticResource Muted}" Text="{Binding Subtitle}" Margin="0,4,0,22" />
+        <Border CornerRadius="14" Background="{StaticResource HeroGradient}" BorderBrush="#3344088C" BorderThickness="1" Padding="28" MaxWidth="720" HorizontalAlignment="Left">
+            <StackPanel>
+                <Border Style="{StaticResource Badge}" HorizontalAlignment="Left" Background="{StaticResource AccentSoftBrush}">
+                    <TextBlock Style="{StaticResource BadgeText}" Foreground="{StaticResource AccentTextBrush}" Text="{Binding Stage, StringFormat='EM DESENVOLVIMENTO · {0}'}" />
+                </Border>
+                <TextBlock Style="{StaticResource H2}" Text="O que este módulo vai entregar" Margin="0,16,0,12" />
+                <ItemsControl ItemsSource="{Binding Features}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,5">
+                                <TextBlock Style="{StaticResource Icon}" FontSize="12" Text="&#xE73E;" Margin="0,0,10,0" />
+                                <TextBlock Style="{StaticResource Body}" Text="{Binding}" MaxWidth="600" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
