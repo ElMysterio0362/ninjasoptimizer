@@ -18,11 +18,11 @@ public sealed class BenchmarkOptions
     /// </summary>
     public FileOptions DiskFileOptions { get; init; } = FileOptions.WriteThrough;
 
-    public TimeSpan CpuSampleDuration { get; init; } = TimeSpan.FromSeconds(2);
-    public int Samples { get; init; } = 3;
+    public TimeSpan CpuSampleDuration { get; init; } = TimeSpan.FromSeconds(1.5);
+    public int Samples { get; init; } = 5;
     public long MemoryBlockBytes { get; init; } = 128L * 1024 * 1024;
     public long DiskFileBytes { get; init; } = 256L * 1024 * 1024;
-    public TimeSpan DiskRandomDuration { get; init; } = TimeSpan.FromSeconds(1);
+    public TimeSpan DiskRandomDuration { get; init; } = TimeSpan.FromSeconds(0.8);
     public bool IncludeDisk { get; init; } = true;
 }
 
@@ -108,6 +108,8 @@ public sealed class BenchmarkRunner
 
     private static BenchmarkResult Sampled(BenchmarkKind kind, string name, string unit, bool higherIsBetter, int samples, Func<double> sample)
     {
+        // Aquecimento descartado: o boost da CPU e o cache ainda estão se ajustando na primeira rodada.
+        sample();
         var values = Enumerable.Range(0, samples).Select(_ => sample()).ToList();
         return new BenchmarkResult { Kind = kind, Name = name, Unit = unit, HigherIsBetter = higherIsBetter, Samples = values, Value = Median(values) };
     }

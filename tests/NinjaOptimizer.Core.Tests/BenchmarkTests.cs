@@ -96,3 +96,42 @@ public sealed class BenchmarkTests(ITestOutputHelper output) : IDisposable
         public void Report(BenchmarkProgress value) => a(value);
     }
 }
+
+public sealed class BenchmarkNoiseTests
+{
+    private static BenchmarkRun Run(int overall, double cpu, params string[] tweaks) => new()
+    {
+        Overall = overall,
+        ActiveTweaks = tweaks.ToList(),
+        Results = [new BenchmarkResult { Kind = BenchmarkKind.CpuSingle, Value = cpu, Samples = [cpu, cpu, cpu] }],
+    };
+
+    [Fact]
+    public void Learns_noise_from_repeated_runs_with_the_same_tweaks()
+    {
+        // Mesmas 2 otimizações, sem mexer em nada: 7.550 → 7.097 (6,2% de variação natural)
+        var history = new[] { Run(1002, 7550, "a", "b"), Run(973, 7097, "b", "a"), Run(900, 6000, "a") };
+        var noise = BenchmarkComparer.LearnedNoise(history);
+        Assert.InRange(noise[BenchmarkKind.CpuSingle], 0.06, 0.065);
+        Assert.InRange(BenchmarkComparer.LearnedOverallNoise(history), 0.029, 0.03);
+        Assert.Equal(2, BenchmarkComparer.RepeatedRuns(history));
+    }
+
+    [Fact]
+    public void Same_config_swing_is_not_reported_as_worse()
+    {
+        var a = Run(1002, 7550, "a");
+        var b = Run(973, 7097, "a");
+        var c = BenchmarkComparer.Compare(a, b, [a, b]).Single();
+        Assert.Equal(ChangeVerdict.WithinNoise, c.Verdict);
+    }
+
+    [Fact]
+    public void Real_gain_beyond_learned_noise_is_reported()
+    {
+        var a = Run(1000, 7000, "a");
+        var b = Run(990, 7200, "a");      // ruído aprendido ~2,8% (abaixo do mínimo de 5%)
+        var c = Run(1100, 8400, "a", "b"); // +20%
+        Assert.Equal(ChangeVerdict.Better, BenchmarkComparer.Compare(b, c, [a, b, c]).Single().Verdict);
+    }
+}

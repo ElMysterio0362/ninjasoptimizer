@@ -40,11 +40,54 @@ public sealed record TestComparison(BenchmarkKind Kind, string Name, double Perc
 
 public static class BenchmarkComparer
 {
-    /// <summary>Diferenças abaixo de 3% (ou abaixo do ruído medido) não contam como ganho nem perda.</summary>
-    public const double MinNoise = 0.03;
+    /// <summary>Margem mínima por teste: diferenças menores nunca contam como ganho ou perda.</summary>
+    public const double MinNoise = 0.05;
 
-    public static IReadOnlyList<TestComparison> Compare(BenchmarkRun baseline, BenchmarkRun current)
+    /// <summary>Margem mínima da pontuação geral (a média de vários testes oscila menos).</summary>
+    public const double MinOverallNoise = 0.03;
+
+    private const double MaxNoise = 0.25;
+
+    private static string ConfigKey(BenchmarkRun r) => string.Join(",", r.ActiveTweaks.Order());
+
+    private static double RelativeRange(IReadOnlyList<double> v)
     {
+        var median = BenchmarkRunner.Median(v);
+        return median <= 0 ? 0 : (v.Max() - v.Min()) / median;
+    }
+
+    /// <summary>
+    /// Variação natural aprendida do próprio PC: entre medições feitas com as MESMAS otimizações ativas,
+    /// qualquer diferença é ruído. Usa a maior variação observada por teste.
+    /// </summary>
+    public static Dictionary<BenchmarkKind, double> LearnedNoise(IEnumerable<BenchmarkRun> history)
+    {
+        var noise = new Dictionary<BenchmarkKind, double>();
+        foreach (var group in history.GroupBy(ConfigKey).Where(g => g.Count() >= 2))
+        foreach (var kind in Enum.GetValues<BenchmarkKind>())
+        {
+            var values = group.SelectMany(r => r.Results.Where(x => x.Kind == kind).Select(x => x.Value)).Where(v => v > 0).ToList();
+            if (values.Count < 2) continue;
+            noise[kind] = Math.Max(noise.GetValueOrDefault(kind), Math.Min(MaxNoise, RelativeRange(values)));
+        }
+        return noise;
+    }
+
+    /// <summary>Variação natural da pontuação geral, aprendida do mesmo jeito.</summary>
+    public static double LearnedOverallNoise(IEnumerable<BenchmarkRun> history) =>
+        Math.Min(MaxNoise, history.GroupBy(ConfigKey).Where(g => g.Count() >= 2)
+            .Select(g => RelativeRange(g.Select(r => (double)r.Overall).ToList())).DefaultIfEmpty(0).Max());
+
+    /// <summary>Quantas medições repetidas (mesmas otimizações) sustentam a variação aprendida.</summary>
+    public static int RepeatedRuns(IEnumerable<BenchmarkRun> history) =>
+        history.GroupBy(ConfigKey).Where(g => g.Count() >= 2).Sum(g => g.Count());
+
+    public static ChangeVerdict Verdict(double change, double noise) =>
+        Math.Abs(change) < noise ? ChangeVerdict.WithinNoise : change > 0 ? ChangeVerdict.Better : ChangeVerdict.Worse;
+
+    public static IReadOnlyList<TestComparison> Compare(BenchmarkRun baseline, BenchmarkRun current, IEnumerable<BenchmarkRun>? history = null)
+    {
+        var learned = history is null ? new() : LearnedNoise(history);
         var list = new List<TestComparison>();
         foreach (var now in current.Results)
         {
@@ -52,10 +95,8 @@ public static class BenchmarkComparer
             if (before is null || before.Value <= 0) continue;
             // Positivo = melhorou, independentemente de "maior é melhor" ou "menor é melhor".
             var change = now.HigherIsBetter ? now.Value / before.Value - 1 : before.Value / now.Value - 1;
-            var noise = Math.Max(MinNoise, Math.Max(now.Spread, before.Spread) / 2);
-            var verdict = Math.Abs(change) < noise ? ChangeVerdict.WithinNoise
-                : change > 0 ? ChangeVerdict.Better : ChangeVerdict.Worse;
-            list.Add(new TestComparison(now.Kind, now.Name, change * 100, verdict));
+            var noise = Math.Max(MinNoise, Math.Max(Math.Max(now.Spread, before.Spread) / 2, learned.GetValueOrDefault(now.Kind)));
+            list.Add(new TestComparison(now.Kind, now.Name, change * 100, Verdict(change, noise)));
         }
         return list;
     }

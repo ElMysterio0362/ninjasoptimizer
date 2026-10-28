@@ -1,4 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using NinjaOptimizer.Core.Hardware;
+using NinjaOptimizer.Core.Settings;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NinjaOptimizer.App.Services;
@@ -40,8 +43,16 @@ public sealed partial class BenchmarkViewModel : ObservableObject
     public bool HasResult => Shown is not null;
     public bool IsEmpty => Shown is null && !IsRunning;
 
-    public BenchmarkViewModel(BenchmarkStore store, OptimizeViewModel optimize, DialogService dialogs, AppLog log, BenchmarkOptions options)
+    private readonly ISensorService _sensors;
+    private readonly LiveSensors _live;
+    private readonly AppSettings _settings;
+
+    public BenchmarkViewModel(BenchmarkStore store, OptimizeViewModel optimize, DialogService dialogs, AppLog log, BenchmarkOptions options,
+        ISensorService sensors, LiveSensors live, AppSettings settings)
     {
+        _sensors = sensors;
+        _live = live;
+        _settings = settings;
         _store = store;
         _optimize = optimize;
         _dialogs = dialogs;
@@ -65,11 +76,22 @@ public sealed partial class BenchmarkViewModel : ObservableObject
             return;
         }
 
+        // Outros programas usando CPU distorcem o resultado.
+        if (_live.Snapshot.CpuLoad is > 15 and var load && !_dialogs.Confirm("Há programas usando a CPU agora",
+                $"A CPU está em {load:0}% de uso antes de começar. Feche jogos, navegador e downloads para um resultado justo.",
+                confirmText: "Rodar mesmo assim", cancelText: "Voltar"))
+            return;
+
         IsRunning = true;
         Progress = 0;
         _cts = new CancellationTokenSource();
+        var process = Process.GetCurrentProcess();
+        var priority = process.PriorityClass;
         try
         {
+            // Durante a medição: sensores pausados (também gastam CPU) e o app com prioridade alta.
+            _sensors.Stop();
+            try { process.PriorityClass = ProcessPriorityClass.High; } catch { /* sem permissão: segue normal */ }
             var progress = new Progress<BenchmarkProgress>(p => { Step = p.Step; Progress = p.Fraction * 100; });
             var run = await new BenchmarkRunner().RunAsync(_options, progress, _cts.Token);
             run.ActiveTweaks = _optimize.AllItems.Where(i => i.IsApplied).Select(i => i.Tweak.Id).ToList();
@@ -92,6 +114,8 @@ public sealed partial class BenchmarkViewModel : ObservableObject
         }
         finally
         {
+            try { process.PriorityClass = priority; } catch { }
+            _sensors.Start(TimeSpan.FromMilliseconds(Math.Max(500, _settings.SensorIntervalMs)));
             IsRunning = false;
             _cts.Dispose();
             _cts = null;
@@ -162,7 +186,7 @@ public sealed partial class BenchmarkViewModel : ObservableObject
             return;
         }
 
-        var comparisons = Baseline is null ? null : BenchmarkComparer.Compare(Baseline, Shown).ToDictionary(c => c.Kind);
+        var comparisons = Baseline is null ? null : BenchmarkComparer.Compare(Baseline, Shown, _runs).ToDictionary(c => c.Kind);
         foreach (var r in Shown.Results)
         {
             var (text, kind) = comparisons is null ? ("Primeira medição", StatusKind.Neutral)
@@ -184,8 +208,8 @@ public sealed partial class BenchmarkViewModel : ObservableObject
         }
 
         var change = (double)Shown.Overall / Math.Max(1, Baseline.Overall) - 1;
-        var verdict = Math.Abs(change) < BenchmarkComparer.MinNoise ? ChangeVerdict.WithinNoise
-            : change > 0 ? ChangeVerdict.Better : ChangeVerdict.Worse;
+        var overallNoise = Math.Max(BenchmarkComparer.MinOverallNoise, BenchmarkComparer.LearnedOverallNoise(_runs));
+        var verdict = BenchmarkComparer.Verdict(change, overallNoise);
         (OverallChangeText, OverallChangeKind) = ChangeLabel(verdict, change * 100);
         Headline = verdict switch
         {
@@ -202,15 +226,18 @@ public sealed partial class BenchmarkViewModel : ObservableObject
             (0, > 0) => $"{removed} otimização(ões) a menos",
             _ => $"{added} a mais e {removed} a menos",
         };
-        BaselineText = $"Comparado com a medição de {Format.When(Baseline.At)} ({Baseline.Overall:N0} pontos): {diff}. " +
-                       $"Diferenças abaixo de {BenchmarkComparer.MinNoise:P0} são variação normal do PC.";
+        var repeated = BenchmarkComparer.RepeatedRuns(_runs);
+        var noiseText = repeated >= 2
+            ? $"Variação natural deste PC: ±{overallNoise:P0} na pontuação geral, aprendida de {repeated} medições com as mesmas otimizações."
+            : $"Diferenças abaixo de {BenchmarkComparer.MinNoise:P0} por teste são variação normal. Rode duas vezes seguidas para o app aprender a variação do seu PC.";
+        BaselineText = $"Comparado com a medição de {Format.When(Baseline.At)} ({Baseline.Overall:N0} pontos): {diff}. {noiseText}";
     }
 
     private static (string, StatusKind) ChangeLabel(ChangeVerdict v, double pct) => v switch
     {
         ChangeVerdict.Better => ($"+{pct:0.0}%", StatusKind.Ok),
         ChangeVerdict.Worse => ($"{pct:0.0}%".Replace("-", "−"), StatusKind.Warning),
-        _ => ("Sem mudança", StatusKind.Neutral),
+        _ => ("Variação normal", StatusKind.Neutral),
     };
 
     /// <summary>Nome exibido pelo tipo de teste (também corrige medições antigas do histórico).</summary>
