@@ -34,7 +34,7 @@ public static class ProcessRules
     public static readonly string[] DefaultPauseList =
     [
         "OneDrive", "Dropbox", "GoogleDriveFS", "ms-teams", "Teams", "Skype", "PhoneExperienceHost", "YourPhone",
-        "AdobeCollabSync", "CCXProcess", "Creative Cloud", "AdobeIPCBroker", "acrotray", "SearchApp",
+        "AdobeCollabSync", "CCXProcess", "Creative Cloud", "AdobeIPCBroker", "acrotray",
     ];
 
     private static readonly string[] GameFolders =
