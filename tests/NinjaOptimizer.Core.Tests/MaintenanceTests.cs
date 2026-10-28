@@ -96,3 +96,22 @@ public sealed class MaintenanceTests : IDisposable
     [InlineData("ERRO: valor não encontrado", null)]
     public void Parses_reg_query_dword(string output, bool? expected) => Assert.Equal(expected, CommandStateAction.ParseRegDword(output));
 }
+
+public sealed class HibernationStateTests
+{
+    private const string Key = @"SYSTEM\CurrentControlSet\Control\Power";
+
+    private static bool? Read(FakeRegistry reg) =>
+        TweakCatalog.HibernationEnabled(new NinjaOptimizer.Core.Abstractions.SystemContext(reg, new FakeServices(), new FakePowerCfg()));
+
+    [Fact]
+    public void Reads_default_when_HibernateEnabled_does_not_exist()
+    {
+        var reg = new FakeRegistry();
+        Assert.True(Read(reg)); // nada no registro: padrão do Windows (ligada)
+        reg.SetValue(NinjaOptimizer.Core.Abstractions.RegHive.LocalMachine, Key, "HibernateEnabledDefault", NinjaOptimizer.Core.Abstractions.RegValue.Dword(0));
+        Assert.False(Read(reg));
+        reg.SetValue(NinjaOptimizer.Core.Abstractions.RegHive.LocalMachine, Key, "HibernateEnabled", NinjaOptimizer.Core.Abstractions.RegValue.Dword(1));
+        Assert.True(Read(reg)); // o valor explícito vence o padrão
+    }
+}

@@ -51,6 +51,9 @@ internal sealed class FakePowerCfg : ICommandRunner
     public bool MemoryCompression { get; set; } = true;
     public bool Hibernate { get; set; } = true;
 
+    /// <summary>Registro onde o powercfg grava HibernateEnabled (opcional).</summary>
+    public FakeRegistry? Registry { get; set; }
+
     public Task<CommandResult> RunAsync(string fileName, string arguments, CancellationToken ct = default)
     {
         Log.Add(arguments);
@@ -64,8 +67,12 @@ internal sealed class FakePowerCfg : ICommandRunner
         if (fileName == "reg" && arguments.Contains("HibernateEnabled"))
             return Task.FromResult(new CommandResult(0,
                 $"\r\nHKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power\r\n    HibernateEnabled    REG_DWORD    0x{(Hibernate ? 1 : 0)}\r\n", ""));
-        if (arguments == "/h on") { Hibernate = true; return Task.FromResult(new CommandResult(0, "", "")); }
-        if (arguments == "/h off") { Hibernate = false; return Task.FromResult(new CommandResult(0, "", "")); }
+        if (arguments is "/h on" or "/h off")
+        {
+            Hibernate = arguments == "/h on";
+            Registry?.SetValue(RegHive.LocalMachine, @"SYSTEM\CurrentControlSet\Control\Power", "HibernateEnabled", RegValue.Dword(Hibernate ? 1u : 0u));
+            return Task.FromResult(new CommandResult(0, "", ""));
+        }
         var parts = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         CommandResult ok(string o = "") => new(0, o, "");
         CommandResult fail() => new(1, "", "erro");

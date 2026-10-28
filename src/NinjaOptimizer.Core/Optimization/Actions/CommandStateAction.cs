@@ -15,7 +15,8 @@ public sealed class CommandStateAction(
     Func<string, bool?> parseState,
     CommandLine turnOn,
     CommandLine turnOff,
-    bool target) : TweakAction
+    bool target,
+    Func<SystemContext, bool?>? stateReader = null) : TweakAction
 {
     public const string KindId = "commandstate";
 
@@ -27,6 +28,7 @@ public sealed class CommandStateAction(
 
     private async Task<bool?> ReadAsync(SystemContext ctx, CancellationToken ct)
     {
+        if (stateReader is not null) return stateReader(ctx);
         var r = await ctx.Commands.RunAsync(query.File, query.Arguments, ct);
         return r.Success ? parseState(r.StdOut) : null;
     }

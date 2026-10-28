@@ -42,6 +42,18 @@ public static class TweakCatalog
     private const string MemoryManagement = @"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
 
     private static CommandLine MmAgentQuery => new("powershell", "-NoProfile -NonInteractive -Command \"(Get-MMAgent).MemoryCompression\"");
+    /// <summary>
+    /// "HibernateEnabled" só existe depois que alguém liga/desliga a hibernação; antes disso o Windows
+    /// usa "HibernateEnabledDefault". Sem nenhum dos dois, a hibernação está ligada (padrão do Windows).
+    /// </summary>
+    internal static bool? HibernationEnabled(SystemContext ctx)
+    {
+        const string key = @"SYSTEM\CurrentControlSet\Control\Power";
+        var v = ctx.Registry.GetValue(RegHive.LocalMachine, key, "HibernateEnabled")
+                ?? ctx.Registry.GetValue(RegHive.LocalMachine, key, "HibernateEnabledDefault");
+        return v?.Data is uint d ? d != 0 : true;
+    }
+
     private static CommandLine HibernateQuery => new("reg", @"query HKLM\SYSTEM\CurrentControlSet\Control\Power /v HibernateEnabled");
 
     private const string GamesTask = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
@@ -502,7 +514,8 @@ public static class TweakCatalog
             Actions =
             [
                 new CommandStateAction("Hibernação", HibernateQuery, CommandStateAction.ParseRegDword,
-                    new CommandLine("powercfg", "/h on"), new CommandLine("powercfg", "/h off"), target: false),
+                    new CommandLine("powercfg", "/h on"), new CommandLine("powercfg", "/h off"), target: false,
+                    stateReader: HibernationEnabled),
             ],
         },
 

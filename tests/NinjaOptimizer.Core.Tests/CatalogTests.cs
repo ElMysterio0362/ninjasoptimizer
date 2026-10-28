@@ -23,7 +23,7 @@ public sealed class CatalogTests : IDisposable
         var reg = new FakeRegistry();
         var svc = new FakeServices();
         svc.Services["DiagTrack"] = (ServiceStartMode.Automatic, true);
-        var power = new FakePowerCfg();
+        var power = new FakePowerCfg { Registry = reg };
         var engine = new OptimizationEngine(new SystemContext(reg, svc, power),
             new ChangeJournal(Path.Combine(_paths.DataFolder, Guid.NewGuid() + ".json")),
             new FakeRestorePoint(), new FakeBackup(), new FakeElevation(), _paths);
@@ -45,6 +45,8 @@ public sealed class CatalogTests : IDisposable
 
         var revert = await engine.RevertAllAsync();
         Assert.All(revert, r => Assert.True(r.Success, r.Message));
+        // O powercfg grava HibernateEnabled ao religar a hibernação (o estado é conferido abaixo)
+        reg.Values.Remove(@"LocalMachine\SYSTEM\CurrentControlSet\Control\Power\HibernateEnabled");
         Assert.Empty(reg.Values);
         Assert.Equal((ServiceStartMode.Automatic, true), svc.Services["DiagTrack"]);
         Assert.Equal(activeBefore, power.Active);
@@ -68,6 +70,7 @@ public sealed class CatalogTests : IDisposable
         await engine.ApplyAsync([tweak], new ApplyOptions { ConfirmHighRisk = _ => Task.FromResult(true) });
         await engine.RevertAllAsync();
 
+        reg.Values.Remove(@"LocalMachine\SYSTEM\CurrentControlSet\Control\Power\HibernateEnabled");
         Assert.Equal(before, reg.Values);
     }
 
