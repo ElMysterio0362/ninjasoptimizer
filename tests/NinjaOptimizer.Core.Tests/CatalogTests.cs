@@ -37,6 +37,7 @@ public sealed class CatalogTests : IDisposable
         var (engine, reg, svc, power) = NewEngine();
         var tweak = TweakCatalog.Get(id);
         var activeBefore = power.Active;
+        var settingsBefore = new Dictionary<string, uint>(power.Settings);
 
         var report = await engine.ApplyAsync([tweak], new ApplyOptions { ConfirmHighRisk = _ => Task.FromResult(true) });
         Assert.Equal(TweakOutcome.Applied, report.Results.Single().Outcome);
@@ -47,6 +48,7 @@ public sealed class CatalogTests : IDisposable
         Assert.Empty(reg.Values);
         Assert.Equal((ServiceStartMode.Automatic, true), svc.Services["DiagTrack"]);
         Assert.Equal(activeBefore, power.Active);
+        Assert.All(power.Settings, kv => Assert.Equal(settingsBefore.GetValueOrDefault(kv.Key, 50u), kv.Value));
     }
 
     [Theory]
@@ -76,7 +78,6 @@ public sealed class CatalogTests : IDisposable
             Assert.False(string.IsNullOrWhiteSpace(t.Name), t.Id);
             Assert.False(string.IsNullOrWhiteSpace(t.Description), t.Id);
             Assert.False(string.IsNullOrWhiteSpace(t.Benefit), t.Id);
-            Assert.NotEmpty(t.Profiles);
             Assert.True(t.Reversible, t.Id);
             // Sem exclamação (tom de voz da marca)
             Assert.DoesNotContain("!", t.Name + t.Description + t.Benefit);
@@ -94,5 +95,8 @@ public sealed class CatalogTests : IDisposable
         // Seguro: só risco baixo. Risco alto nunca entra em perfil.
         Assert.All(TweakCatalog.ForProfile(OptimizationProfile.Safe), t => Assert.Equal(RiskLevel.Low, t.Risk));
         Assert.All(TweakCatalog.All.Where(t => t.Risk == RiskLevel.High), t => Assert.Empty(t.Profiles));
+        // Todo perfil tem ajustes, e todo ajuste fora de perfil é uma correção opcional explícita
+        foreach (var p in Enum.GetValues<OptimizationProfile>()) Assert.NotEmpty(TweakCatalog.ForProfile(p));
+        Assert.All(TweakCatalog.All.Where(t => t.Profiles.Count == 0), t => Assert.True(t.Risk >= RiskLevel.Medium, t.Id));
     }
 }

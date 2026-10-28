@@ -57,6 +57,27 @@ Testes: cada ajuste do catálogo é aplicado e revertido automaticamente, com o 
 3. Saia e entre de novo na conta: animações reduzidas, busca sem resultados da web, mouse sem aceleração.
 4. *Reverter tudo* e confira que os valores voltaram (ou sumiram, se não existiam).
 
+## ✅ Etapa 2B — CPU e GPU
+
+| Id | O que faz | Como | Risco | Perfis |
+|---|---|---|---|---|
+| `cpu.core-parking` | Núcleos sempre prontos (core parking off) | Plano ativo, CPMINCORES = 100 (AC) | Baixo | Máximo, Gamer |
+| `cpu.foreground-priority` | Prioridade ao programa em primeiro plano | `Win32PrioritySeparation = 0x26` | Baixo | Equilibrado, Máximo, Gamer |
+| `cpu.power-throttling` | Sem limitação de energia de processos | `PowerThrottlingOff = 1` | Baixo | Máximo, Gamer |
+| `gpu.hags` | Agendamento de GPU acelerado por hardware | `HwSchMode = 2` (reiniciar) | Médio | Máximo, Gamer |
+| `gpu.windowed-optimizations` | Otimizações para jogos em janela | `SwapEffectUpgradeEnable=1`, preservando HDR automático e VRR | Baixo | Equilibrado, Máximo, Gamer |
+| `gpu.pcie-power` | PCI Express sem economia de energia | Plano ativo, ASPM = desligado (AC) | Baixo | Máximo, Gamer |
+| `gpu.mpo-off` | Desativa MPO (tela piscando) | `OverlayTestMode = 5` (reiniciar) | Médio | Nenhum (correção opcional) |
+
+Novas ações: `PowerSettingAction` (configurações do plano de energia, inclusive escondidas; reverte no mesmo plano e ignora planos já apagados) e `DirectXSettingAction` (muda uma opção sem apagar as outras).
+
+### Como testar a etapa 2B
+1. Benchmark → rode uma vez e use como base.
+2. Perfil **Gamer** → *Aplicar selecionadas* → reinicie o PC.
+3. Confira: `powercfg /query scheme_current sub_processor CPMINCORES` (índice CA `0x00000064`) e Configurações → Sistema → Tela → Elementos gráficos → *Alterar configurações gráficas padrão* (agendamento de GPU ligado).
+4. Rode o benchmark de novo e compare. CPU e latência de memória são os testes com mais chance de mudar.
+5. *Reverter tudo* e confira que o valor do core parking voltou ao anterior.
+
 ## ✅ Benchmark básico (antecipado da Etapa 3)
 
 Para medir cada bloco da Etapa 2 conforme ele fica pronto.

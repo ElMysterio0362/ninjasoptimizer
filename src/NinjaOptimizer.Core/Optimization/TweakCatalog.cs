@@ -31,6 +31,13 @@ public static class TweakCatalog
     private const string ContentDelivery = @"Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager";
     private const string ExplorerAdvanced = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
     private const string GameConfigStore = @"System\GameConfigStore";
+    // Plano de energia: subgrupos e configurações (GUIDs fixos do Windows)
+    private const string SubProcessor = "54533251-82be-4824-96c1-47b60b740d00";
+    private const string CoreParkingMinCores = "0cc5b647-c1df-4637-891a-dec35c318583";
+    private const string SubPciExpress = "501a4d13-42af-4429-9fd1-a8218c268e20";
+    private const string LinkStatePowerManagement = "ee12f906-d277-404b-b6da-e5fa1a576df5";
+    private const string GraphicsDrivers = @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
+
     private const string GamesTask = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
 
     private static List<Tweak> Build() =>
@@ -339,6 +346,110 @@ public static class TweakCatalog
             Impact = ImpactLevel.Low,
             Profiles = P(Gamer),
             Actions = [CuString(@"Control Panel\Accessibility\StickyKeys", "Flags", "506")],
+        },
+        // ═════════════ Etapa 2B · CPU ═════════════
+        new Tweak
+        {
+            Id = "cpu.core-parking",
+            Name = "Manter todos os núcleos da CPU prontos",
+            Description =
+                "Desliga o \"core parking\": o Windows para de adormecer núcleos da CPU quando a carga cai. " +
+                "Vale no plano de energia ativo, com o PC na tomada. Se você trocar de plano, aplique de novo.",
+            Benefit = "Menos atraso quando um jogo pede mais núcleos de repente; frametime mais estável.",
+            Category = TweakCategory.Cpu,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Medium,
+            Profiles = P(MaxPerformance, Gamer),
+            Actions = [new PowerSettingAction(SubProcessor, CoreParkingMinCores, 100, "mínimo de núcleos ativos 100%")],
+        },
+        new Tweak
+        {
+            Id = "cpu.foreground-priority",
+            Name = "Priorizar o programa em primeiro plano",
+            Description =
+                "O Windows dá fatias de tempo de CPU mais curtas e um reforço maior ao programa que está na frente, " +
+                "como o jogo ou o app que você está usando.",
+            Benefit = "O que você está usando responde melhor quando há programas em segundo plano.",
+            Category = TweakCategory.Cpu,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Medium,
+            Profiles = P(Balanced, MaxPerformance, Gamer),
+            Actions = [LmDword(@"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation", 0x26)],
+        },
+        new Tweak
+        {
+            Id = "cpu.power-throttling",
+            Name = "Desativar a limitação de energia de processos",
+            Description =
+                "Impede o Windows de colocar programas em segundo plano nos núcleos econômicos ou em frequência reduzida. " +
+                "Em notebooks na bateria, gasta um pouco mais.",
+            Benefit = "Programas em segundo plano (gravação, Discord, downloads) não engasgam enquanto você joga.",
+            Category = TweakCategory.Cpu,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(MaxPerformance, Gamer),
+            Actions = [LmDword(@"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling", "PowerThrottlingOff", 1)],
+        },
+
+        // ═════════════ Etapa 2B · GPU ═════════════
+        new Tweak
+        {
+            Id = "gpu.hags",
+            Name = "Ativar agendamento de GPU acelerado por hardware",
+            Description =
+                "A própria placa de vídeo organiza a fila de trabalho, em vez do processador. Exige placa e driver " +
+                "compatíveis (NVIDIA GTX 1000 ou mais nova, AMD RX 5000 ou mais nova). Em poucos jogos antigos pode causar engasgos.",
+            Benefit = "Reduz a latência entre CPU e GPU e alivia a CPU. Necessário para a Geração de Quadros da NVIDIA.",
+            Category = TweakCategory.Gpu,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Medium,
+            RequiresRestart = true,
+            Profiles = P(MaxPerformance, Gamer),
+            Actions = [LmDword(GraphicsDrivers, "HwSchMode", 2)],
+        },
+        new Tweak
+        {
+            Id = "gpu.windowed-optimizations",
+            Name = "Ativar otimizações para jogos em janela",
+            Description =
+                "Jogos em janela ou em tela cheia sem bordas passam a usar o modo de apresentação mais moderno do DirectX. " +
+                "Outras opções gráficas do Windows, como HDR automático, não são alteradas.",
+            Benefit = "Menos latência e suporte a taxa de atualização variável em jogos sem bordas.",
+            Category = TweakCategory.Gpu,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Medium,
+            Profiles = P(Balanced, MaxPerformance, Gamer),
+            Actions = [new DirectXSettingAction("SwapEffectUpgradeEnable", "1")],
+        },
+        new Tweak
+        {
+            Id = "gpu.pcie-power",
+            Name = "Desativar economia de energia do PCI Express",
+            Description =
+                "A conexão da placa de vídeo (PCI Express) não entra em modo de economia entre um quadro e outro. " +
+                "Vale no plano de energia ativo, com o PC na tomada.",
+            Benefit = "Evita pequenos atrasos quando a GPU acorda da economia de energia.",
+            Category = TweakCategory.Gpu,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            Profiles = P(MaxPerformance, Gamer),
+            Actions = [new PowerSettingAction(SubPciExpress, LinkStatePowerManagement, 0, "economia de energia do PCI Express desligada")],
+        },
+        new Tweak
+        {
+            Id = "gpu.mpo-off",
+            Name = "Desativar o MPO (corrige tela piscando)",
+            Description =
+                "Desliga as \"sobreposições multiplano\" do Windows. Use só se você vê tela piscando, travadinhas no " +
+                "navegador ou em vídeos com placas NVIDIA. Em versões recentes do Windows pode não ter efeito.",
+            Benefit = "Resolve piscadas e engasgos causados por um problema conhecido de alguns drivers.",
+            Category = TweakCategory.Gpu,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(), // correção específica: fica fora dos perfis
+            Actions = [LmDword(@"SOFTWARE\Microsoft\Windows\Dwm", "OverlayTestMode", 5)],
         },
     ];
 }
