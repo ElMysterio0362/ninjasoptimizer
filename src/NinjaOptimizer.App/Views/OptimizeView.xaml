@@ -231,7 +231,7 @@
         </Border>
 
         <!-- ───────── Trabalhando: o shuriken gira ───────── -->
-        <Border Grid.RowSpan="4" Grid.ColumnSpan="3" Background="#CC07060B" CornerRadius="16"
+        <Border Grid.RowSpan="4" Grid.ColumnSpan="3" Background="#CC07060B" CornerRadius="22"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Path Style="{StaticResource Spinner}" Width="48" Height="48" HorizontalAlignment="Center" />

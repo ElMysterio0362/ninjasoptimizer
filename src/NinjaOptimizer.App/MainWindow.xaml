@@ -46,13 +46,17 @@
 
     <Grid x:Name="Root">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="248" />
+            <ColumnDefinition Width="260" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- ───────── Menu lateral ───────── -->
-        <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
-            <DockPanel Margin="16,20,16,16">
+        <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                CornerRadius="26" Margin="12,12,0,12">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="28" ShadowDepth="6" Direction="270" Opacity="0.55" Color="#000000" />
+            </Border.Effect>
+            <DockPanel Margin="14,18,14,16">
                 <!-- Logo horizontal: símbolo + wordmark -->
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,6,10,24">
                     <Path Style="{StaticResource Shuriken}" Width="26" Height="26" />
@@ -77,7 +81,7 @@
                                 </Style>
                             </Ellipse.Style>
                         </Ellipse>
-                        <TextBlock Style="{StaticResource Label}" Text="{Binding FooterText}" />
+                        <TextBlock Style="{StaticResource Label}" Text="{Binding FooterText}" TextWrapping="Wrap" MaxWidth="190" />
                     </StackPanel>
                 </StackPanel>
 
@@ -106,7 +110,7 @@
                 </Button>
             </StackPanel>
 
-            <ContentControl x:Name="PageHost" Grid.Row="1" Margin="32,0,24,24" Focusable="False"
+            <ContentControl x:Name="PageHost" Grid.Row="1" Margin="28,0,24,24" Focusable="False"
                             Content="{Binding Current.Page, NotifyOnTargetUpdated=True}">
                 <ContentControl.RenderTransform>
                     <TranslateTransform x:Name="PageOffset" />

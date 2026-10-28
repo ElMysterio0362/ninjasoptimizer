@@ -17,7 +17,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
     <Border Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBorderBrush}" BorderThickness="1"
-            CornerRadius="14" Padding="16,14">
+            CornerRadius="18" Padding="18,14">
         <DockPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                 <Button Style="{StaticResource WarningButton}" Content="Abrir como administrador"

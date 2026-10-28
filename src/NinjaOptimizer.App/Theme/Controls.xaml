@@ -13,7 +13,7 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Border Margin="-4" CornerRadius="15" BorderBrush="{StaticResource AccentTextBrush}" BorderThickness="2" SnapsToDevicePixels="True" />
+                    <Border Margin="-4" CornerRadius="17" BorderBrush="{StaticResource AccentTextBrush}" BorderThickness="2" SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -121,7 +121,7 @@
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="CornerRadius" Value="26" />
         <Setter Property="Padding" Value="28" />
     </Style>
     <!-- Card (Superfície 2, raio 16) -->
@@ -129,14 +129,14 @@
         <Setter Property="Background" Value="{StaticResource Surface2Brush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="CornerRadius" Value="22" />
         <Setter Property="Padding" Value="20" />
     </Style>
     <!-- Ladrilho de ícone 44 px -->
     <Style x:Key="IconTile" TargetType="Border">
         <Setter Property="Width" Value="44" />
         <Setter Property="Height" Value="44" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="14" />
         <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource AccentSoftBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -220,13 +220,13 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                        <Border x:Name="Bg" CornerRadius="12" Background="{StaticResource PrimaryGradient}"
+                        <Border x:Name="Bg" CornerRadius="14" Background="{StaticResource PrimaryGradient}"
                                 BorderBrush="{StaticResource AccentMidBrush}" BorderThickness="1">
                             <Border.Effect>
                                 <DropShadowEffect x:Name="Glow" Color="#7B2FE0" BlurRadius="20" ShadowDepth="4" Direction="270" Opacity="0.45" />
                             </Border.Effect>
                         </Border>
-                        <Border x:Name="Hover" CornerRadius="12" Background="{StaticResource PrimaryHoverGradient}"
+                        <Border x:Name="Hover" CornerRadius="14" Background="{StaticResource PrimaryHoverGradient}"
                                 BorderBrush="{StaticResource AccentLightBrush}" BorderThickness="1" Opacity="0" />
                         <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
@@ -271,7 +271,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bg" CornerRadius="12" Background="{TemplateBinding Background}"
+                    <Border x:Name="Bg" CornerRadius="14" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
                         <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -318,14 +318,14 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                        <Border x:Name="Bg" CornerRadius="16" Background="{StaticResource HeroGradient}"
+                        <Border x:Name="Bg" CornerRadius="18" Background="{StaticResource HeroGradient}"
                                 BorderBrush="{StaticResource AccentLightBrush}" BorderThickness="1">
                             <Border.Effect>
                                 <DropShadowEffect Color="#7B2FE0" BlurRadius="32" ShadowDepth="8" Direction="270" Opacity="0.55" />
                             </Border.Effect>
                         </Border>
-                        <Border x:Name="Hover" CornerRadius="16" Background="{StaticResource PrimaryHoverGradient}" Opacity="0" />
-                        <Border x:Name="Focus" CornerRadius="19" Margin="-4" BorderBrush="{StaticResource AccentTextBrush}" BorderThickness="2" Visibility="Collapsed" />
+                        <Border x:Name="Hover" CornerRadius="18" Background="{StaticResource PrimaryHoverGradient}" Opacity="0" />
+                        <Border x:Name="Focus" CornerRadius="22" Margin="-4" BorderBrush="{StaticResource AccentTextBrush}" BorderThickness="2" Visibility="Collapsed" />
                         <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -415,7 +415,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Bg" CornerRadius="12" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" Padding="12,0">
+                    <Border x:Name="Bg" CornerRadius="14" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" Padding="12,0">
                         <ContentPresenter VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -583,8 +583,8 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Grid>
-                        <Border x:Name="Halo" CornerRadius="15" Margin="-3" BorderBrush="#38B98BFF" BorderThickness="3" Visibility="Collapsed" />
-                        <Border x:Name="Bd" CornerRadius="12" Background="{TemplateBinding Background}"
+                        <Border x:Name="Halo" CornerRadius="17" Margin="-3" BorderBrush="#38B98BFF" BorderThickness="3" Visibility="Collapsed" />
+                        <Border x:Name="Bd" CornerRadius="14" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
                             <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" />
                         </Border>

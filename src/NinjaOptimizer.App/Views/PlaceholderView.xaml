@@ -6,10 +6,10 @@
         <TextBlock Style="{StaticResource PageTitle}" Text="{Binding Title}" />
         <TextBlock Style="{StaticResource Muted}" Text="{Binding Subtitle}" Margin="0,4,0,24" />
 
-        <Border CornerRadius="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource SurfaceBrush}"
+        <Border CornerRadius="26" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource SurfaceBrush}"
                 MaxWidth="760" HorizontalAlignment="Left">
             <Grid>
-                <Border CornerRadius="20" Background="{StaticResource HeroGlow}" IsHitTestVisible="False" />
+                <Border CornerRadius="26" Background="{StaticResource HeroGlow}" IsHitTestVisible="False" />
                 <StackPanel Margin="32">
                     <DockPanel>
                         <Border DockPanel.Dock="Right" Style="{StaticResource PillAccent}" VerticalAlignment="Top">

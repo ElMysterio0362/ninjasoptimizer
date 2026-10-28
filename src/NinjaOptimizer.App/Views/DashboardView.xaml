@@ -28,9 +28,9 @@
             </DockPanel>
 
             <!-- ───────── Card principal ───────── -->
-            <Border CornerRadius="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource SurfaceBrush}">
+            <Border CornerRadius="26" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource SurfaceBrush}">
                 <Grid>
-                    <Border CornerRadius="20" Background="{StaticResource HeroGlow}" IsHitTestVisible="False" />
+                    <Border CornerRadius="26" Background="{StaticResource HeroGlow}" IsHitTestVisible="False" />
                     <Grid Margin="32">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />

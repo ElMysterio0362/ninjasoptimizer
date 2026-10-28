@@ -12,7 +12,7 @@ public sealed partial class MainViewModel : ObservableObject
     public IReadOnlyList<NavItem> FooterItems { get; }
     public bool IsElevated { get; }
     public string FooterText => $"Versão {typeof(MainViewModel).Assembly.GetName().Version?.ToString(3)} · " +
-        (IsElevated ? "modo administrador" : "modo usuário");
+        (IsElevated ? "admin" : "usuário");
 
     private NavItem _current;
 

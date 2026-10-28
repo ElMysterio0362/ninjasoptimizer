@@ -62,9 +62,9 @@ public sealed record DiskInfo(
     /// <summary>Classe de velocidade esperada pela interface (a velocidade real vem do benchmark).</summary>
     public string SpeedClass => (MediaType, BusType) switch
     {
-        (_, "NVMe") => "NVMe — até ~3.500–7.000 MB/s",
-        (DiskMediaType.Ssd, _) => "SSD SATA — até ~550 MB/s",
-        (DiskMediaType.Hdd, _) => "HDD — ~80–200 MB/s",
+        (_, "NVMe") => "NVMe — até 7.000 MB/s",
+        (DiskMediaType.Ssd, _) => "SSD SATA — até 550 MB/s",
+        (DiskMediaType.Hdd, _) => "HDD — 80 a 200 MB/s",
         _ => "Desconhecida",
     };
 }

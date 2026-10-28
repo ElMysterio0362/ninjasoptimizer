@@ -8,7 +8,7 @@
         FontFamily="{StaticResource UiFont}" Foreground="{StaticResource TextBrush}" UseLayoutRounding="True">
     <!-- Diálogo do sistema de design: Superfície 2, borda forte, raio 16 -->
     <Border Background="{StaticResource Surface2Brush}" BorderBrush="{StaticResource BorderStrongBrush}"
-            BorderThickness="1" CornerRadius="16" Margin="20">
+            BorderThickness="1" CornerRadius="22" Margin="20">
         <Border.Effect>
             <DropShadowEffect BlurRadius="40" ShadowDepth="14" Direction="270" Opacity="0.75" Color="#000000" />
         </Border.Effect>
@@ -22,7 +22,7 @@
             </DockPanel>
             <TextBlock x:Name="MessageText" Style="{StaticResource Muted}" Margin="0,16,0,0" />
             <Border x:Name="DetailsBox" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                    CornerRadius="12" Padding="14,8" Margin="0,16,0,0" Visibility="Collapsed">
+                    CornerRadius="16" Padding="14,8" Margin="0,16,0,0" Visibility="Collapsed">
                 <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="DetailsList">
                         <ItemsControl.ItemTemplate>
