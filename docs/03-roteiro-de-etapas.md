@@ -136,6 +136,33 @@ Fica para a Etapa 3: teste de GPU (cena 3D) e gráficos do histórico.
 1. Benchmark → *Rodar benchmark* (cerca de 1 minuto). Rode duas vezes seguidas: a maioria dos testes deve dar "Sem mudança".
 2. Aplique o plano *Desempenho Máximo* (Otimizar → CPU) e rode de novo: os testes de CPU tendem a subir ou ficar iguais.
 
+## ✅ Etapa 2D — Serviços, rede e inicialização
+
+### Ajustes (reversíveis)
+| Ajuste | Perfis | Risco |
+|---|---|---|
+| Desativar serviços raramente usados (Fax, Mapas, Varejo, Registro Remoto, WMP Network) | todos | Baixo |
+| Desativar SysMain (Superfetch) | nenhum (opcional) | Médio |
+| Desativar indexação de pesquisa (WSearch) | nenhum (opcional) | Médio |
+| Desativar serviço de impressão (Spooler) | nenhum (opcional) | Médio |
+| Remover limite de rede multimídia (NetworkThrottlingIndex / SystemResponsiveness 10) | Equilibrado, Máximo, Gamer | Baixo · reiniciar |
+| Desativar Nagle (TcpAckFrequency/TCPNoDelay em cada placa) | Gamer | Baixo · reiniciar |
+| DNS Cloudflare 1.1.1.1 (reverte para o DNS anterior de cada placa, ou automático) | nenhum (opcional) | Médio |
+
+Novas ações: `RegistryEachSubkeyAction` (mesmo valor em todas as subchaves, com snapshot por subchave) e `DnsServersAction` (Get-NetAdapter / Set-DnsClientServerAddress).
+
+### Manutenção
+- **Limpar cache de DNS** (`ipconfig /flushdns`).
+
+### Aba Inicialização (em Otimizar)
+Lista os programas que abrem com o Windows (Run da conta, Run da máquina 64/32 bits, pastas Inicializar) e liga/desliga com o mesmo mecanismo do Gerenciador de Tarefas (`StartupApproved`). Desativar não apaga nada. Itens de "todos os usuários" pedem administrador.
+
+### Como testar a etapa 2D
+1. Otimizar → filtro **Rede**: aplique "Remover o limite de rede" e "Nagle"; confira o histórico e use **Desfazer**.
+2. Aplique **DNS Cloudflare**, rode `ipconfig /all` (DNS = 1.1.1.1) e depois **Desfazer**: o DNS deve voltar ao anterior.
+3. Aba **Inicialização**: desligue um programa, abra o Gerenciador de Tarefas → Inicializar: ele deve aparecer como Desabilitado. Ligue de volta.
+4. Limpeza → **Limpar cache de DNS**.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

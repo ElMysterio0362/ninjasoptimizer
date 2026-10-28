@@ -40,6 +40,8 @@ public interface IRegistryAccess
     RegValue? GetValue(RegHive hive, string key, string name);
     void SetValue(RegHive hive, string key, string name, RegValue value);
     void DeleteValue(RegHive hive, string key, string name);
+    IReadOnlyList<string> GetSubKeyNames(RegHive hive, string key);
+    IReadOnlyList<string> GetValueNames(RegHive hive, string key);
 }
 
 public enum ServiceStartMode { Boot, System, Automatic, AutomaticDelayed, Manual, Disabled }

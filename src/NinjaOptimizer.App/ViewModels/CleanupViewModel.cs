@@ -31,6 +31,7 @@ public sealed partial class CleanupItemViewModel(MaintenanceTask task) : Observa
         "cleanup.components" => "Icon.Broom",
         "maintenance.optimize-drives" => "Icon.Disk",
         "memory.standby-list" => "Icon.Memory",
+        "maintenance.dns-flush" => "Icon.Network",
         _ => "Icon.Settings",
     };
 

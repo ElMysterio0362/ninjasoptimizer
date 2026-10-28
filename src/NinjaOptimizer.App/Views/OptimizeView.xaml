@@ -97,6 +97,28 @@
             </Border>
         </DataTemplate>
 
+        <!-- ───────── Programa da inicialização ───────── -->
+        <DataTemplate x:Key="StartupRow">
+            <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,12">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Style="{StaticResource IconTile}" VerticalAlignment="Center">
+                        <c:Icon Data="{StaticResource Icon.Power}" Size="20" HorizontalAlignment="Center" />
+                    </Border>
+                    <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center" Margin="16,0,0,0"
+                              IsChecked="{Binding IsEnabled, Mode=TwoWay}" AutomationProperties.Name="{Binding Name}" />
+                    <Border DockPanel.Dock="Right" Style="{StaticResource KindPill}" Tag="{Binding StateKind}" Margin="8,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StateText}" />
+                    </Border>
+                    <StackPanel Margin="16,0,8,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource Label}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Command}">
+                            <Run Text="{Binding Program, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ScopeText, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
         <!-- ───────── Item do histórico ───────── -->
         <DataTemplate x:Key="HistoryTemplate">
             <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="0,10">
@@ -170,7 +192,7 @@
                 </StackPanel>
             </Button>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom"
-                        Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}">
+                        Visibility="{Binding ShowTweaks, Converter={StaticResource BoolToVis}}">
                 <Button Style="{StaticResource SecondaryButton}" Command="{Binding RevertAllCommand}" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
                         <c:Icon Data="{StaticResource Icon.Undo}" Size="18" Margin="0,0,8,0" />
@@ -229,8 +251,14 @@
                         <TextBlock Text="Limpeza e manutenção" VerticalAlignment="Center" />
                     </StackPanel>
                 </RadioButton>
+                <RadioButton Style="{StaticResource TabPill}" GroupName="OptimizeTab" IsChecked="{Binding ShowStartup, Mode=TwoWay}">
+                    <StackPanel Orientation="Horizontal">
+                        <c:Icon Data="{StaticResource Icon.Power}" Size="18" Margin="0,0,8,0" />
+                        <TextBlock Text="Inicialização" VerticalAlignment="Center" />
+                    </StackPanel>
+                </RadioButton>
             </WrapPanel>
-            <StackPanel Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}">
+            <StackPanel Visibility="{Binding ShowTweaks, Converter={StaticResource BoolToVis}}">
             <ItemsControl ItemsSource="{Binding Filters}" AutomationProperties.Name="Filtrar por categoria">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -278,7 +306,7 @@
 
         <!-- ───────── Limpeza e manutenção ───────── -->
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
-                Visibility="{Binding ShowCleanup, Converter={StaticResource BoolToVis}}" DataContext="{Binding Cleanup}">
+                Visibility="{Binding DataContext.ShowCleanup, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" DataContext="{Binding Cleanup}">
             <DockPanel>
                 <Border DockPanel.Dock="Top" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,14">
                     <StackPanel Orientation="Horizontal">
@@ -292,9 +320,31 @@
             </DockPanel>
         </Border>
 
+        <!-- ───────── Inicialização ───────── -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
+                Visibility="{Binding DataContext.ShowStartup, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" DataContext="{Binding Startup}">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,14">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource SecondarySmall}" Height="32" Padding="12,0" Command="{Binding RefreshCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <c:Icon Data="{StaticResource Icon.Refresh}" Size="16" Margin="0,0,6,0" />
+                                <TextBlock Text="Atualizar" FontSize="13" />
+                            </StackPanel>
+                        </Button>
+                        <c:Icon Data="{StaticResource Icon.Power}" Foreground="{StaticResource AccentTextBrush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Body}" FontWeight="SemiBold" Text="{Binding Summary}" VerticalAlignment="Center" />
+                    </DockPanel>
+                </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource StartupRow}" />
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
         <!-- ───────── Lista ───────── -->
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
-                Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}">
+                Visibility="{Binding ShowTweaks, Converter={StaticResource BoolToVis}}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <ItemsControl ItemsSource="{Binding VisibleItems}" ItemTemplate="{StaticResource TweakRow}" />
@@ -308,7 +358,10 @@
                    Visibility="{Binding ShowCleanup, Converter={StaticResource BoolToVis}}"
                    Text="A limpeza não tem como desfazer: cada item diz o que apaga antes de rodar." />
         <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
-                   Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}"
+                   Visibility="{Binding ShowStartup, Converter={StaticResource BoolToVis}}"
+                   Text="Desativar não desinstala nem apaga nada: é o mesmo botão do Gerenciador de Tarefas. Ligue de novo quando quiser." />
+        <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
+                   Visibility="{Binding ShowTweaks, Converter={StaticResource BoolToVis}}"
                    Text="Todos os ajustes podem ser revertidos. Antes de aplicar, o app cria um ponto de restauração do Windows." />
 
         <!-- ───────── Histórico de alterações ───────── -->

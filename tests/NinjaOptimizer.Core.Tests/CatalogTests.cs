@@ -22,13 +22,17 @@ public sealed class CatalogTests : IDisposable
     {
         var reg = new FakeRegistry();
         var svc = new FakeServices();
-        svc.Services["DiagTrack"] = (ServiceStartMode.Automatic, true);
+        foreach (var name in ServiceNames) svc.Services[name] = (ServiceStartMode.Automatic, true);
         var power = new FakePowerCfg { Registry = reg };
+        reg.SubKeys[$@"LocalMachine\{DnsServersAction.InterfacesKey}"] = [.. power.Adapters.Select(a => a.Guid)];
         var engine = new OptimizationEngine(new SystemContext(reg, svc, power),
             new ChangeJournal(Path.Combine(_paths.DataFolder, Guid.NewGuid() + ".json")),
             new FakeRestorePoint(), new FakeBackup(), new FakeElevation(), _paths);
         return (engine, reg, svc, power);
     }
+
+    private static readonly string[] ServiceNames =
+        [.. TweakCatalog.All.SelectMany(t => t.Actions.OfType<ServiceStartupAction>()).Select(a => a.ServiceName).Distinct()];
 
     [Theory]
     [MemberData(nameof(AllIds))]
@@ -48,7 +52,7 @@ public sealed class CatalogTests : IDisposable
         // O powercfg grava HibernateEnabled ao religar a hibernação (o estado é conferido abaixo)
         reg.Values.Remove(@"LocalMachine\SYSTEM\CurrentControlSet\Control\Power\HibernateEnabled");
         Assert.Empty(reg.Values);
-        Assert.Equal((ServiceStartMode.Automatic, true), svc.Services["DiagTrack"]);
+        Assert.All(ServiceNames, n => Assert.Equal(ServiceStartMode.Automatic, svc.Services[n].Mode));
         Assert.Equal(activeBefore, power.Active);
         Assert.All(power.Settings, kv => Assert.Equal(settingsBefore.GetValueOrDefault(kv.Key, 50u), kv.Value));
         Assert.True(power.MemoryCompression);

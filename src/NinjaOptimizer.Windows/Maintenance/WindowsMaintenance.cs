@@ -42,6 +42,7 @@ public static class WindowsMaintenanceCatalog
         new ComponentCleanupTask(commands),
         new DriveOptimizeTask(commands),
         new StandbyListTask(),
+        new DnsFlushTask(commands),
     ];
 }
 
@@ -245,4 +246,22 @@ internal sealed class StandbyListTask : MaintenanceTask
         var freed = Math.Max(0, before - StandbyBytes());
         return new MaintenanceResult(true, freed, "Memória em espera liberada.");
     }, ct);
+}
+
+internal sealed class DnsFlushTask(ICommandRunner commands) : MaintenanceTask
+{
+    public override string Id => "maintenance.dns-flush";
+    public override string Name => "Limpar cache de DNS";
+    public override string Description => "Esquece os endereços de sites guardados. Resolve sites que não abrem depois de mudarem de servidor ou de trocar o DNS.";
+    public override TweakCategory Category => TweakCategory.Network;
+    public override string ActionText => "Limpar agora";
+
+    public override async Task<MaintenanceResult> RunAsync(IProgress<string>? progress, CancellationToken ct)
+    {
+        progress?.Report("Limpando o cache de DNS…");
+        var r = await commands.RunAsync("ipconfig", "/flushdns", ct);
+        return r.Success
+            ? new MaintenanceResult(true, 0, "Cache de DNS limpo.")
+            : new MaintenanceResult(false, 0, $"O Windows não limpou o cache de DNS (código {r.ExitCode}).");
+    }
 }

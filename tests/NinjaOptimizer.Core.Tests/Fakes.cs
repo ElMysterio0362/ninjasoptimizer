@@ -19,6 +19,24 @@ internal sealed class FakeRegistry : IRegistryAccess
     }
 
     public void DeleteValue(RegHive hive, string key, string name) => Values.Remove(K(hive, key, name));
+
+    /// <summary>Subchaves existentes por "hive\\chave" (além das que já têm valores).</summary>
+    public Dictionary<string, List<string>> SubKeys { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyList<string> GetValueNames(RegHive hive, string key)
+    {
+        var prefix = $"{hive}\\{key}\\";
+        return Values.Keys.Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Select(k => k[prefix.Length..]).Where(r => !r.Contains('\\')).ToList();
+    }
+
+    public IReadOnlyList<string> GetSubKeyNames(RegHive hive, string key)
+    {
+        var prefix = $"{hive}\\{key}\\";
+        var derived = Values.Keys.Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Select(k => k[prefix.Length..]).Where(r => r.Contains('\\')).Select(r => r[..r.IndexOf('\\')]);
+        return SubKeys.GetValueOrDefault($"{hive}\\{key}", []).Concat(derived).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
 }
 
 internal sealed class FakeServices : IServiceManager
@@ -51,6 +69,9 @@ internal sealed class FakePowerCfg : ICommandRunner
     public bool MemoryCompression { get; set; } = true;
     public bool Hibernate { get; set; } = true;
 
+    /// <summary>Placas de rede conectadas (Get-NetAdapter).</summary>
+    public List<(int Index, string Guid)> Adapters { get; } = [(12, "{AAAA0000-0000-0000-0000-000000000001}")];
+
     /// <summary>Registro onde o powercfg grava HibernateEnabled (opcional).</summary>
     public FakeRegistry? Registry { get; set; }
 
@@ -62,8 +83,21 @@ internal sealed class FakePowerCfg : ICommandRunner
             if (arguments.Contains("(Get-MMAgent).MemoryCompression")) return Task.FromResult(new CommandResult(0, MemoryCompression ? "True\r\n" : "False\r\n", ""));
             if (arguments.Contains("Enable-MMAgent -MemoryCompression")) { MemoryCompression = true; return Task.FromResult(new CommandResult(0, "", "")); }
             if (arguments.Contains("Disable-MMAgent -MemoryCompression")) { MemoryCompression = false; return Task.FromResult(new CommandResult(0, "", "")); }
+            if (arguments.Contains("Get-NetAdapter"))
+                return Task.FromResult(new CommandResult(0, string.Concat(Adapters.Select(a => $"{a.Index}|{a.Guid}\r\n")), ""));
+            if (arguments.Contains("Set-DnsClientServerAddress"))
+            {
+                var idx = int.Parse(System.Text.RegularExpressions.Regex.Match(arguments, @"-InterfaceIndex (\d+)").Groups[1].Value);
+                var guid = Adapters.First(a => a.Index == idx).Guid;
+                var key = $@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{guid}";
+                if (arguments.Contains("-ResetServerAddresses")) Registry?.DeleteValue(RegHive.LocalMachine, key, "NameServer");
+                else Registry?.SetValue(RegHive.LocalMachine, key, "NameServer", RegValue.Str(string.Join(",",
+                    System.Text.RegularExpressions.Regex.Matches(arguments, @"'([^']+)'").Select(m => m.Groups[1].Value))));
+                return Task.FromResult(new CommandResult(0, "", ""));
+            }
             return Task.FromResult(new CommandResult(1, "", "comando desconhecido"));
         }
+        if (fileName == "ipconfig") return Task.FromResult(new CommandResult(0, "", ""));
         if (fileName == "reg" && arguments.Contains("HibernateEnabled"))
             return Task.FromResult(new CommandResult(0,
                 $"\r\nHKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power\r\n    HibernateEnabled    REG_DWORD    0x{(Hibernate ? 1 : 0)}\r\n", ""));

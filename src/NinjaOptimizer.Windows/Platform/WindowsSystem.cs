@@ -49,6 +49,20 @@ public sealed class WindowsRegistryAccess : IRegistryAccess
         }
     }
 
+    public IReadOnlyList<string> GetSubKeyNames(RegHive hive, string key)
+    {
+        using var root = Root(hive);
+        using var k = root.OpenSubKey(key);
+        return k?.GetSubKeyNames() ?? [];
+    }
+
+    public IReadOnlyList<string> GetValueNames(RegHive hive, string key)
+    {
+        using var root = Root(hive);
+        using var k = root.OpenSubKey(key);
+        return k?.GetValueNames() ?? [];
+    }
+
     public void DeleteValue(RegHive hive, string key, string name)
     {
         using var root = Root(hive);
@@ -219,5 +233,25 @@ public sealed class RegExeBackup(ICommandRunner commands) : IRegistryBackup
             if (r.Success) files.Add(file); // chave inexistente: nada a salvar
         }
         return files;
+    }
+}
+
+/// <summary>Arquivos das pastas "Inicializar" (da conta e de todos os usuários).</summary>
+public static class StartupFolders
+{
+    public static IEnumerable<NinjaOptimizer.Core.Startup.StartupFile> Files()
+    {
+        foreach (var (folder, all) in new[]
+                 {
+                     (Environment.GetFolderPath(Environment.SpecialFolder.Startup), false),
+                     (Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), true),
+                 })
+        {
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) continue;
+            string[] files;
+            try { files = Directory.GetFiles(folder); }
+            catch (UnauthorizedAccessException) { continue; }
+            foreach (var f in files) yield return new(Path.GetFileName(f), f, all);
+        }
     }
 }

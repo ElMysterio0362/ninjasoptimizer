@@ -1,3 +1,4 @@
+using NinjaOptimizer.Core.Startup;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -100,6 +101,8 @@ public partial class App : Application
         s.AddSingleton<IReadOnlyList<MaintenanceTask>>(sp => WindowsMaintenanceCatalog.Build(
             sp.GetRequiredService<ICommandRunner>(), sp.GetRequiredService<IServiceManager>(), sp.GetRequiredService<IElevationService>()));
         s.AddSingleton<CleanupViewModel>();
+        s.AddSingleton(sp => new StartupManager(sp.GetRequiredService<IRegistryAccess>(), StartupFolders.Files));
+        s.AddSingleton<StartupViewModel>();
         s.AddSingleton<OptimizeViewModel>();
         s.AddSingleton<DashboardViewModel>();
         s.AddSingleton<HardwareViewModel>();

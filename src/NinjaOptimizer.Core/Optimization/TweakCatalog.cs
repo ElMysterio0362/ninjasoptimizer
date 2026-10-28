@@ -36,6 +36,7 @@ public static class TweakCatalog
     private const string CoreParkingMinCores = "0cc5b647-c1df-4637-891a-dec35c318583";
     private const string SubPciExpress = "501a4d13-42af-4429-9fd1-a8218c268e20";
     private const string LinkStatePowerManagement = "ee12f906-d277-404b-b6da-e5fa1a576df5";
+    private const string MultimediaProfile = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile";
     private const string GraphicsDrivers = @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
 
     private const string FileSystem = @"SYSTEM\CurrentControlSet\Control\FileSystem";
@@ -556,6 +557,124 @@ public static class TweakCatalog
                     new CommandLine("powershell", "-NoProfile -NonInteractive -Command \"Disable-MMAgent -MemoryCompression\""),
                     target: false),
             ],
+        },
+
+        // ═════════════ Etapa 2D · Serviços ═════════════
+        new Tweak
+        {
+            Id = "services.rarely-used",
+            Name = "Desativar serviços raramente usados",
+            Description =
+                "Desliga serviços que quase ninguém usa em PC doméstico: Fax, Mapas offline, Experiência de varejo (lojas), " +
+                "Registro Remoto e Geolocalização de rede Wi-Fi do sensor. Os que não existirem no seu Windows são ignorados.",
+            Benefit = "Menos processos em segundo plano e um início do Windows um pouco mais leve.",
+            Category = TweakCategory.ProcessesServices,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            Profiles = P(Safe, Balanced, MaxPerformance, Gamer),
+            Actions =
+            [
+                new ServiceStartupAction("Fax", ServiceStartMode.Disabled),
+                new ServiceStartupAction("MapsBroker", ServiceStartMode.Disabled),
+                new ServiceStartupAction("RetailDemo", ServiceStartMode.Disabled),
+                new ServiceStartupAction("RemoteRegistry", ServiceStartMode.Disabled),
+                new ServiceStartupAction("WMPNetworkSvc", ServiceStartMode.Disabled),
+            ],
+        },
+        new Tweak
+        {
+            Id = "services.sysmain",
+            Name = "Desativar o SysMain (Superfetch)",
+            Description =
+                "O SysMain pré-carrega na RAM os programas que você mais usa. Em SSD rápido o ganho dele é pequeno, " +
+                "e em alguns PCs causa uso alto de disco logo após ligar.",
+            Benefit = "Evita picos de disco e de memória no início; útil se você nota o disco a 100% sem motivo.",
+            Category = TweakCategory.ProcessesServices,
+            Risk = RiskLevel.Medium, // programas podem abrir um pouco mais devagar num HD
+            Impact = ImpactLevel.Medium,
+            Profiles = P(),
+            Actions = [new ServiceStartupAction("SysMain", ServiceStartMode.Disabled)],
+        },
+        new Tweak
+        {
+            Id = "services.search-indexer",
+            Name = "Desativar a indexação de pesquisa",
+            Description =
+                "Para o serviço Windows Search, que fica lendo seus arquivos para acelerar buscas. " +
+                "A pesquisa continua funcionando, só fica mais lenta (procura na hora).",
+            Benefit = "Menos leitura de disco e CPU em segundo plano, principalmente com muitos arquivos.",
+            Category = TweakCategory.ProcessesServices,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Medium,
+            Profiles = P(),
+            Actions = [new ServiceStartupAction("WSearch", ServiceStartMode.Disabled)],
+        },
+        new Tweak
+        {
+            Id = "services.print-spooler",
+            Name = "Desativar o serviço de impressão",
+            Description =
+                "Desliga o Spooler de Impressão. Só faça isso se você não usa impressora (nem \"Imprimir em PDF\").",
+            Benefit = "Um serviço a menos rodando e menos superfície de ataque.",
+            Category = TweakCategory.ProcessesServices,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Actions = [new ServiceStartupAction("Spooler", ServiceStartMode.Disabled)],
+        },
+
+        // ═════════════ Etapa 2D · Rede ═════════════
+        new Tweak
+        {
+            Id = "network.throttling",
+            Name = "Remover o limite de rede para multimídia",
+            Description =
+                "Por padrão o Windows limita o tráfego de rede enquanto toca áudio/vídeo e reserva 20% da CPU " +
+                "para tarefas de fundo. Este ajuste tira o limite e reduz a reserva para 10%.",
+            Benefit = "Download e jogo online mais estáveis enquanto há música ou chamada de voz aberta.",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Medium,
+            RequiresRestart = true,
+            Profiles = P(Balanced, MaxPerformance, Gamer),
+            Actions =
+            [
+                LmDword(MultimediaProfile, "NetworkThrottlingIndex", 0xFFFFFFFF),
+                LmDword(MultimediaProfile, "SystemResponsiveness", 10),
+            ],
+        },
+        new Tweak
+        {
+            Id = "network.nagle-off",
+            Name = "Desativar o algoritmo de Nagle",
+            Description =
+                "O Windows junta pacotes pequenos antes de enviar, o que economiza banda mas atrasa um pouco cada um. " +
+                "Este ajuste manda os pacotes na hora, em todas as placas de rede.",
+            Benefit = "Pode reduzir o ping em jogos online que usam TCP (muitos MMOs e alguns competitivos).",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(Gamer),
+            Actions =
+            [
+                new RegistryEachSubkeyAction(RegHive.LocalMachine, DnsServersAction.InterfacesKey, "TcpAckFrequency", RegValue.Dword(1), "Placas de rede"),
+                new RegistryEachSubkeyAction(RegHive.LocalMachine, DnsServersAction.InterfacesKey, "TCPNoDelay", RegValue.Dword(1), "Placas de rede"),
+            ],
+        },
+        new Tweak
+        {
+            Id = "network.dns-cloudflare",
+            Name = "Usar DNS rápido (Cloudflare 1.1.1.1)",
+            Description =
+                "Troca o DNS das placas conectadas para 1.1.1.1 e 1.0.0.1. Ao reverter, volta exatamente ao DNS que " +
+                "estava antes (ou ao automático do roteador). Em redes de empresa/escola, pode impedir o acesso a sites internos.",
+            Benefit = "Sites e lojas de jogos podem começar a carregar mais rápido, e o DNS do provedor deixa de ver seus acessos.",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Actions = [new DnsServersAction(["1.1.1.1", "1.0.0.1"], "Cloudflare")],
         },
     ];
 }

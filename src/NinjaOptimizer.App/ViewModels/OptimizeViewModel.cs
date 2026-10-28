@@ -137,23 +137,29 @@ public sealed partial class OptimizeViewModel : ObservableObject
     /// <summary>Aba "Limpeza e manutenção".</summary>
     public CleanupViewModel Cleanup { get; }
 
-    [ObservableProperty] private bool _showCleanup;
-    public bool ShowTweaks
-    {
-        get => !ShowCleanup;
-        set => ShowCleanup = !value;
-    }
+    /// <summary>Aba "Inicialização".</summary>
+    public StartupViewModel Startup { get; }
 
-    partial void OnShowCleanupChanged(bool value)
+    private string _tab = "tweaks";
+    private void SetTab(string tab, bool on)
     {
+        if (!on || _tab == tab) return;
+        _tab = tab;
         OnPropertyChanged(nameof(ShowTweaks));
-        if (value) _ = Cleanup.EnsureAnalyzedAsync();
+        OnPropertyChanged(nameof(ShowCleanup));
+        OnPropertyChanged(nameof(ShowStartup));
+        if (tab == "cleanup") _ = Cleanup.EnsureAnalyzedAsync();
+        if (tab == "startup") Startup.Refresh();
     }
+    public bool ShowTweaks { get => _tab == "tweaks"; set => SetTab("tweaks", value); }
+    public bool ShowCleanup { get => _tab == "cleanup"; set => SetTab("cleanup", value); }
+    public bool ShowStartup { get => _tab == "startup"; set => SetTab("startup", value); }
 
     public OptimizeViewModel(OptimizationEngine engine, DialogService dialogs, IElevationService elevation, AppSettings settings, AppLog log,
-        CleanupViewModel cleanup)
+        CleanupViewModel cleanup, StartupViewModel startup)
     {
         Cleanup = cleanup;
+        Startup = startup;
         _engine = engine;
         _dialogs = dialogs;
         _elevation = elevation;
