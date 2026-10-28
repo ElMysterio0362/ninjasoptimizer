@@ -57,9 +57,21 @@ public sealed partial class TweakItemViewModel(Tweak tweak) : ObservableObject
     [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private bool _isApplied;
 
-    /// <summary>"Aplicado" (pelo app, desfazível no histórico) ou "Já configurado" (o sistema já estava assim).</summary>
+    /// <summary>"Aplicado" (pelo app, desfazível no histórico) ou "Já configurado antes do NinjaOptimizer" (o sistema já estava assim).</summary>
     [ObservableProperty] private string _appliedText = "Aplicado";
     [ObservableProperty] private StatusKind _appliedKind = StatusKind.Ok;
+
+    /// <summary>true = aplicado pelo NinjaOptimizer (tem histórico para desfazer).</summary>
+    public bool AppliedByApp { get; set; }
+}
+
+public enum StatusFilterKind { All, NotApplied, AppliedByApp, AlreadyConfigured }
+
+public sealed partial class StatusFilter(string title, StatusFilterKind kind) : ObservableObject
+{
+    public string Title { get; } = title;
+    public StatusFilterKind Kind { get; } = kind;
+    [ObservableProperty] private bool _isChecked;
 }
 
 public sealed partial class CategoryFilter(string title, TweakCategory? category) : ObservableObject
@@ -99,6 +111,9 @@ public sealed partial class OptimizeViewModel : ObservableObject
     public ObservableCollection<TweakItemViewModel> Items { get; } = new();
     public ObservableCollection<TweakItemViewModel> VisibleItems { get; } = new();
     public ObservableCollection<CategoryFilter> Filters { get; } = new();
+    public ObservableCollection<StatusFilter> StatusFilters { get; } = new();
+    private TweakCategory? _category;
+    private StatusFilterKind _statusFilter = StatusFilterKind.All;
     public ObservableCollection<HistoryItemViewModel> History { get; } = new();
     public IReadOnlyList<OptimizationProfile> Profiles { get; } = Enum.GetValues<OptimizationProfile>();
 
@@ -107,6 +122,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
     [ObservableProperty] private int _selectedCount;
     [ObservableProperty] private int _appliedCount;
     [ObservableProperty] private int _pendingRestartCount;
+    [ObservableProperty] private bool _isFilterEmpty;
 
     public int TotalCount => Items.Count;
     public IEnumerable<TweakItemViewModel> AllItems => Items;
@@ -142,9 +158,19 @@ public sealed partial class OptimizeViewModel : ObservableObject
         foreach (var f in Filters)
             f.PropertyChanged += (_, e) =>
             {
-                if (e.PropertyName == nameof(CategoryFilter.IsChecked) && f.IsChecked) ApplyFilter(f.Category);
+                if (e.PropertyName == nameof(CategoryFilter.IsChecked) && f.IsChecked) { _category = f.Category; ApplyFilter(); }
             };
-        ApplyFilter(null);
+
+        StatusFilters.Add(new StatusFilter("Todos", StatusFilterKind.All) { IsChecked = true });
+        StatusFilters.Add(new StatusFilter("Não aplicados", StatusFilterKind.NotApplied));
+        StatusFilters.Add(new StatusFilter("Aplicados pelo app", StatusFilterKind.AppliedByApp));
+        StatusFilters.Add(new StatusFilter("Já configurados antes", StatusFilterKind.AlreadyConfigured));
+        foreach (var f in StatusFilters)
+            f.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(StatusFilter.IsChecked) && f.IsChecked) { _statusFilter = f.Kind; ApplyFilter(); }
+            };
+        ApplyFilter();
         RefreshHistory();
     }
 
@@ -161,10 +187,18 @@ public sealed partial class OptimizeViewModel : ObservableObject
         _ => "Icon.Settings",
     };
 
-    private void ApplyFilter(TweakCategory? category)
+    private void ApplyFilter()
     {
         VisibleItems.Clear();
-        foreach (var i in Items.Where(i => category is null || i.Tweak.Category == category)) VisibleItems.Add(i);
+        foreach (var i in Items.Where(i => (_category is null || i.Tweak.Category == _category) && _statusFilter switch
+                 {
+                     StatusFilterKind.NotApplied => !i.IsApplied,
+                     StatusFilterKind.AppliedByApp => i.IsApplied && i.AppliedByApp,
+                     StatusFilterKind.AlreadyConfigured => i.IsApplied && !i.AppliedByApp,
+                     _ => true,
+                 }))
+            VisibleItems.Add(i);
+        IsFilterEmpty = VisibleItems.Count == 0;
     }
 
     private void UpdateCounts()
@@ -183,12 +217,16 @@ public sealed partial class OptimizeViewModel : ObservableObject
         foreach (var item in Items)
         {
             var pending = item.Tweak.RequiresRestart && byApp.TryGetValue(item.Tweak.Id, out var at) && at > bootTime;
-            item.AppliedText = pending ? "Aplicado · reinicie para valer" : byApp.ContainsKey(item.Tweak.Id) ? "Aplicado" : "Já configurado";
-            item.AppliedKind = pending ? StatusKind.Warning : StatusKind.Ok;
+            item.AppliedByApp = byApp.ContainsKey(item.Tweak.Id);
+            item.AppliedText = pending ? "Aplicado · reinicie para valer"
+                : item.AppliedByApp ? "Aplicado"
+                : "Já configurado antes do NinjaOptimizer";
+            item.AppliedKind = pending ? StatusKind.Warning : item.AppliedByApp ? StatusKind.Ok : StatusKind.Neutral;
             try { item.IsApplied = await Task.Run(() => _engine.IsAppliedAsync(item.Tweak)); }
             catch (Exception ex) { _log.Error($"Status de {item.Tweak.Id}", ex); }
         }
         PendingRestartCount = Items.Count(i => i.IsApplied && i.AppliedKind == StatusKind.Warning);
+        ApplyFilter();
         UpdateCounts();
         RefreshHistory();
         StateChanged?.Invoke(this, EventArgs.Empty);

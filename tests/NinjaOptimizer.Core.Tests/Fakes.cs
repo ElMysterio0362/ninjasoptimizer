@@ -43,6 +43,8 @@ internal sealed class FakePowerCfg : ICommandRunner
 
     /// <summary>Valores AC das configurações por "plano|subgrupo|configuração". Padrão: 50.</summary>
     public Dictionary<string, uint> Settings { get; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Configurações escondidas: "powercfg /query" não as lista (igual ao Windows).</summary>
+    public HashSet<string> HiddenSettings { get; } = ["0cc5b647-c1df-4637-891a-dec35c318583"];
     private uint GetSetting(string scheme, string sub, string set) => Settings.TryGetValue($"{scheme}|{sub}|{set}", out var v) ? v : 50;
 
     public Task<CommandResult> RunAsync(string fileName, string arguments, CancellationToken ct = default)
@@ -60,13 +62,15 @@ internal sealed class FakePowerCfg : ICommandRunner
             "/setactive" when Schemes.Contains(parts[1]) => Do(() => Active = parts[1]),
             "/setactive" => fail(),
             "/delete" => Do(() => Schemes.Remove(parts[1])),
-            "/query" when Schemes.Contains(parts[1]) => ok(
+            "/query" when Schemes.Contains(parts[1]) && HiddenSettings.Contains(parts[3]) =>
+                ok($"GUID do Esquema de Energia: {parts[1]}\n  GUID do Subgrupo: {parts[2]}\n"),
+            "/query" or "/qh" when Schemes.Contains(parts[1]) => ok(
                 $"GUID do Esquema de Energia: {parts[1]}\n  GUID do Subgrupo: {parts[2]}\n    GUID da Configuração de Energia: {parts[3]}\n" +
                 "      Configuração Mínima Possível: 0x00000000\n      Configuração Máxima Possível: 0x00000064\n" +
                 "      Incremento de Configurações Possíveis: 0x00000001\n      Unidades de Configurações Possíveis: %\n" +
                 $"    Índice de Configuração de Energia CA Atual: 0x{GetSetting(parts[1], parts[2], parts[3]):x8}\n" +
                 "    Índice de Configuração de Energia CC Atual: 0x00000032"),
-            "/query" => fail(),
+            "/query" or "/qh" => fail(),
             "/setacvalueindex" when Schemes.Contains(parts[1]) => Do(() => Settings[$"{parts[1]}|{parts[2]}|{parts[3]}"] = uint.Parse(parts[4])),
             "/setacvalueindex" => fail(),
             _ => fail(),

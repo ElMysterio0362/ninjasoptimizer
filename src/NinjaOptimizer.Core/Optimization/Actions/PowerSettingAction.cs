@@ -34,8 +34,13 @@ public sealed partial class PowerSettingAction(string subgroupGuid, string setti
 
     private async Task<uint?> ReadAcAsync(ICommandRunner cmd, string scheme, CancellationToken ct)
     {
-        var r = await cmd.RunAsync("powercfg", $"/query {scheme} {Subgroup} {Setting}", ct);
-        return r.Success ? ParseQuery(r.StdOut)?.Ac : null;
+        // "/qh" inclui configurações escondidas (como o core parking), que "/query" omite.
+        foreach (var verb in new[] { "/qh", "/query" })
+        {
+            var r = await cmd.RunAsync("powercfg", $"{verb} {scheme} {Subgroup} {Setting}", ct);
+            if (r.Success && ParseQuery(r.StdOut) is { } values) return values.Ac;
+        }
+        return null;
     }
 
     public override async Task<ActionSnapshot> CaptureAsync(SystemContext ctx, CancellationToken ct)
