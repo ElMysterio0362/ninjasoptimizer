@@ -195,3 +195,22 @@ public sealed class OptimizationEngineTests : IDisposable
         Assert.All(TweakCatalog.ForProfile(OptimizationProfile.Safe), t => Assert.Equal(RiskLevel.Low, t.Risk));
     }
 }
+
+public sealed class JournalCleanupTests : IDisposable
+{
+    private readonly TempPaths _paths = new();
+    public void Dispose() => _paths.Dispose();
+
+    [Fact]
+    public void RemoveFailed_keeps_applied_and_reverted_entries()
+    {
+        var path = Path.Combine(_paths.DataFolder, "journal.json");
+        var j = new ChangeJournal(path);
+        j.Add(new JournalEntry { TweakId = "a", Status = JournalStatus.Applied });
+        j.Add(new JournalEntry { TweakId = "b", Status = JournalStatus.Failed });
+        j.Add(new JournalEntry { TweakId = "c", Status = JournalStatus.Reverted });
+
+        Assert.Equal(1, j.RemoveFailed());
+        Assert.Equal(["a", "c"], new ChangeJournal(path).Entries.Select(e => e.TweakId));
+    }
+}

@@ -65,6 +65,17 @@ public sealed class ChangeJournal
         }
     }
 
+    /// <summary>Remove do histórico as tentativas que falharam (não têm nada para desfazer).</summary>
+    public int RemoveFailed()
+    {
+        lock (_gate)
+        {
+            var removed = _entries.RemoveAll(e => e.Status == JournalStatus.Failed);
+            if (removed > 0) Save();
+            return removed;
+        }
+    }
+
     public void Update(JournalEntry entry)
     {
         lock (_gate)

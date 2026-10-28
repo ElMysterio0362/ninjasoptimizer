@@ -255,6 +255,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
         History.Clear();
         foreach (var e in _engine.Journal.Entries.OrderByDescending(e => e.AppliedAt))
             History.Add(new HistoryItemViewModel(e));
+        OnPropertyChanged(nameof(HasFailures));
     }
 
     [RelayCommand]
@@ -407,6 +408,16 @@ public sealed partial class OptimizeViewModel : ObservableObject
             IsBusy = false;
             await RefreshStatusAsync();
         }
+    }
+
+    public bool HasFailures => History.Any(h => h.Status == JournalStatus.Failed);
+
+    [RelayCommand]
+    private void ClearFailures()
+    {
+        var n = _engine.Journal.RemoveFailed();
+        _log.Info($"Histórico: {n} falha(s) removida(s)");
+        RefreshHistory();
     }
 
     [RelayCommand]
