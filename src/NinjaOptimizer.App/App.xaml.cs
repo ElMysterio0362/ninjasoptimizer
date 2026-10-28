@@ -6,6 +6,8 @@ using NinjaOptimizer.App.Services;
 using NinjaOptimizer.App.ViewModels;
 using NinjaOptimizer.Core.Abstractions;
 using NinjaOptimizer.Core.Benchmark;
+using NinjaOptimizer.Core.Maintenance;
+using NinjaOptimizer.Windows.Maintenance;
 using NinjaOptimizer.Core.Hardware;
 using NinjaOptimizer.Core.Optimization;
 using NinjaOptimizer.Core.Safety;
@@ -94,6 +96,10 @@ public partial class App : Application
         s.AddSingleton<DialogService>();
         s.AddSingleton<HardwareState>();
         s.AddSingleton<LiveSensors>();
+        s.AddSingleton(sp => new MaintenanceStore(Path.Combine(sp.GetRequiredService<IAppPaths>().DataFolder, "maintenance.json")));
+        s.AddSingleton<IReadOnlyList<MaintenanceTask>>(sp => WindowsMaintenanceCatalog.Build(
+            sp.GetRequiredService<ICommandRunner>(), sp.GetRequiredService<IServiceManager>(), sp.GetRequiredService<IElevationService>()));
+        s.AddSingleton<CleanupViewModel>();
         s.AddSingleton<OptimizeViewModel>();
         s.AddSingleton<DashboardViewModel>();
         s.AddSingleton<HardwareViewModel>();

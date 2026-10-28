@@ -45,6 +45,7 @@ public static class ActionReverter
         [ServiceStartupAction.KindId] = ServiceStartupAction.RevertAsync,
         [PowerPlanAction.KindId] = PowerPlanAction.RevertAsync,
         [PowerSettingAction.KindId] = PowerSettingAction.RevertAsync,
+        [CommandStateAction.KindId] = CommandStateAction.RevertAsync,
     };
 
     public static Task RevertAsync(SystemContext ctx, ActionSnapshot snapshot, CancellationToken ct)

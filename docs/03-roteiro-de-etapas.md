@@ -57,6 +57,41 @@ Testes: cada ajuste do catálogo é aplicado e revertido automaticamente, com o 
 3. Saia e entre de novo na conta: animações reduzidas, busca sem resultados da web, mouse sem aceleração.
 4. *Reverter tudo* e confira que os valores voltaram (ou sumiram, se não existiam).
 
+## ✅ Etapa 2C — Memória e disco
+
+### Ajustes (reversíveis)
+
+| Id | O que faz | Como | Risco | Perfis |
+|---|---|---|---|---|
+| `storage.trim` | Garante o TRIM do SSD ligado | `DisableDeleteNotification = 0` | Baixo | Todos |
+| `storage.last-access` | Não grava a data de último acesso | `NtfsDisableLastAccessUpdate = 0x80000001` (reiniciar) | Baixo | Equilibrado, Máximo, Gamer |
+| `storage.hibernation-off` | Desativa a hibernação (libera ~RAM no disco) | `powercfg /h off`, estado lido do registro | Médio | Nenhum |
+| `memory.pagefile-auto` | Arquivo de paginação automático | `PagingFiles = ?:\pagefile.sys` (reiniciar) | Médio | Nenhum (correção) |
+| `memory.compression-off` | Desativa a compressão de memória (32 GB+) | `Disable-MMAgent -MemoryCompression` (reiniciar) | Médio | Nenhum |
+
+Nova ação: `CommandStateAction` (recurso ligado/desligado por comando; o snapshot guarda o estado e os comandos de volta).
+
+### Limpeza e manutenção (aba nova em Otimizar; não tem desfazer)
+
+| Tarefa | O que faz | Admin |
+|---|---|---|
+| Apagar arquivos temporários | `%TEMP%` (e `Windows\Temp` como admin), só arquivos com mais de 1 dia | Não |
+| Esvaziar a Lixeira | `SHEmptyRecycleBin` | Não |
+| Limpar cache de shaders | DirectX, NVIDIA, AMD e Intel | Não |
+| Limpar downloads do Windows Update | Pausa `wuauserv`/`bits`, limpa `SoftwareDistribution\Download`, retoma | Sim |
+| Limpar componentes antigos | `DISM /StartComponentCleanup` | Sim |
+| Otimizar unidades | `defrag /C /O` (TRIM no SSD, desfragmentação no HDD) | Sim |
+| Liberar memória em espera | `NtSetSystemInformation` (MemoryPurgeStandbyList) | Sim |
+
+Cada tarefa mostra quanto deve liberar antes de rodar e quanto liberou depois; a última execução fica em `maintenance.json`.
+A limpeza de pastas nunca segue atalhos de pasta (pontos de junção) para fora do lugar limpo e pula arquivos em uso.
+
+### Como testar a etapa 2C
+1. Otimizar → aba **Limpeza e manutenção**: confira as estimativas.
+2. Rode "Apagar arquivos temporários" e "Limpar cache de shaders": o valor liberado deve bater com a estimativa.
+3. Como administrador, rode "Liberar memória em espera" e veja a memória livre subir no Gerenciador de Tarefas.
+4. Aba **Ajustes** → filtro **Disco**/**Memória**: aplique e reverta "Desativar a hibernação" e confira com `powercfg /a`.
+
 ## ✅ Etapa 2B — CPU e GPU
 
 | Id | O que faz | Como | Risco | Perfis |

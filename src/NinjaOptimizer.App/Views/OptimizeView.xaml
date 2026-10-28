@@ -62,6 +62,41 @@
 
         </DataTemplate>
 
+        <!-- ───────── Linha de limpeza/manutenção ───────── -->
+        <DataTemplate x:Key="CleanupRow">
+            <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,14">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Style="{StaticResource IconTile}" VerticalAlignment="Top">
+                        <c:Icon Data="{Binding Icon, Converter={StaticResource ResourceKey}}" Size="22" HorizontalAlignment="Center" />
+                    </Border>
+                    <Grid DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="150">
+                        <Button Style="{StaticResource SecondarySmall}" Content="{Binding ActionText}" HorizontalAlignment="Right"
+                                Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CommandParameter="{Binding}" Visibility="{Binding IsRunning, Converter={StaticResource InverseBoolToVis}}" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
+                            <Path Style="{StaticResource Spinner}" Width="22" Height="22" />
+                            <TextBlock Style="{StaticResource Small}" Text="Executando…" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                    <Border DockPanel.Dock="Right" Style="{StaticResource KindPill}" Tag="{Binding EstimateKind}" Margin="8,0,0,0">
+                        <Border.Visibility>
+                            <Binding Path="EstimateText" Converter="{StaticResource EmptyToCollapsed}" />
+                        </Border.Visibility>
+                        <TextBlock Text="{Binding EstimateText}" />
+                    </Border>
+                    <StackPanel Margin="16,0,8,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Style="{StaticResource Small}" LineHeight="18" Text="{Binding Description}" Margin="0,2,0,0" />
+                        <TextBlock Style="{StaticResource Small}" FontSize="12" Foreground="{StaticResource WarningBrush}" Text="{Binding Note}" Margin="0,4,0,0"
+                                   Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource Label}" Margin="0,6,0,0">
+                            <Run Text="{Binding DurationText, Mode=OneWay}" /><Run Text="{Binding LastRunText, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
         <!-- ───────── Item do histórico ───────── -->
         <DataTemplate x:Key="HistoryTemplate">
             <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="0,10">
@@ -127,7 +162,15 @@
 
         <!-- ───────── Cabeçalho ───────── -->
         <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,20">
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+            <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" VerticalAlignment="Bottom"
+                    Command="{Binding Cleanup.AnalyzeCommand}" Visibility="{Binding ShowCleanup, Converter={StaticResource BoolToVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <c:Icon Data="{StaticResource Icon.Refresh}" Size="18" Margin="0,0,8,0" />
+                    <TextBlock Text="Analisar de novo" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom"
+                        Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}">
                 <Button Style="{StaticResource SecondaryButton}" Command="{Binding RevertAllCommand}" Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
                         <c:Icon Data="{StaticResource Icon.Undo}" Size="18" Margin="0,0,8,0" />
@@ -173,6 +216,21 @@
 
         <!-- ───────── Filtro por categoria + perfis prontos ───────── -->
         <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,0,0,8">
+            <WrapPanel Margin="0,0,0,12">
+                <RadioButton Style="{StaticResource TabPill}" GroupName="OptimizeTab" IsChecked="{Binding ShowTweaks, Mode=TwoWay}">
+                    <StackPanel Orientation="Horizontal">
+                        <c:Icon Data="{StaticResource Icon.Bolt}" Size="18" Margin="0,0,8,0" />
+                        <TextBlock Text="Ajustes" VerticalAlignment="Center" />
+                    </StackPanel>
+                </RadioButton>
+                <RadioButton Style="{StaticResource TabPill}" GroupName="OptimizeTab" IsChecked="{Binding ShowCleanup, Mode=TwoWay}">
+                    <StackPanel Orientation="Horizontal">
+                        <c:Icon Data="{StaticResource Icon.Broom}" Size="18" Margin="0,0,8,0" />
+                        <TextBlock Text="Limpeza e manutenção" VerticalAlignment="Center" />
+                    </StackPanel>
+                </RadioButton>
+            </WrapPanel>
+            <StackPanel Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}">
             <ItemsControl ItemsSource="{Binding Filters}" AutomationProperties.Name="Filtrar por categoria">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -215,10 +273,28 @@
                 <TextBlock Style="{StaticResource Small}" Foreground="{StaticResource AccentTextBrush}" VerticalAlignment="Center"
                            Margin="6,0,0,8" Text="{Binding Status}" />
             </WrapPanel>
+            </StackPanel>
         </StackPanel>
 
+        <!-- ───────── Limpeza e manutenção ───────── -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
+                Visibility="{Binding ShowCleanup, Converter={StaticResource BoolToVis}}" DataContext="{Binding Cleanup}">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,14">
+                    <StackPanel Orientation="Horizontal">
+                        <c:Icon Data="{StaticResource Icon.Disk}" Foreground="{StaticResource AccentTextBrush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Body}" FontWeight="SemiBold" Text="{Binding TotalText}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource CleanupRow}" />
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
         <!-- ───────── Lista ───────── -->
-        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True">
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
+                Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <ItemsControl ItemsSource="{Binding VisibleItems}" ItemTemplate="{StaticResource TweakRow}" />
@@ -229,6 +305,10 @@
         </Border>
 
         <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
+                   Visibility="{Binding ShowCleanup, Converter={StaticResource BoolToVis}}"
+                   Text="A limpeza não tem como desfazer: cada item diz o que apaga antes de rodar." />
+        <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
+                   Visibility="{Binding ShowCleanup, Converter={StaticResource InverseBoolToVis}}"
                    Text="Todos os ajustes podem ser revertidos. Antes de aplicar, o app cria um ponto de restauração do Windows." />
 
         <!-- ───────── Histórico de alterações ───────── -->

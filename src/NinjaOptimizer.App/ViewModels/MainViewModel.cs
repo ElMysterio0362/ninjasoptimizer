@@ -60,6 +60,16 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void Navigate(string key) =>
+    public void Navigate(string key)
+    {
+        // "cleanup" abre a página Otimizar já na aba Limpeza e manutenção.
+        if (key == "cleanup")
+        {
+            var optimize = NavItems.First(n => n.Key == "optimize");
+            ((OptimizeViewModel)optimize.Page).ShowCleanup = true;
+            Current = optimize;
+            return;
+        }
         Current = NavItems.Concat(FooterItems).FirstOrDefault(n => n.Key == key) ?? Current;
+    }
 }

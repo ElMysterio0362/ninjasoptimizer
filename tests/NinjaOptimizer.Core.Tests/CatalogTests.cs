@@ -49,6 +49,8 @@ public sealed class CatalogTests : IDisposable
         Assert.Equal((ServiceStartMode.Automatic, true), svc.Services["DiagTrack"]);
         Assert.Equal(activeBefore, power.Active);
         Assert.All(power.Settings, kv => Assert.Equal(settingsBefore.GetValueOrDefault(kv.Key, 50u), kv.Value));
+        Assert.True(power.MemoryCompression);
+        Assert.True(power.Hibernate);
     }
 
     [Theory]

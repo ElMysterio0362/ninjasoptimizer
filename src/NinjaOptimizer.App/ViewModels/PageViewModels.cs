@@ -167,7 +167,7 @@ public sealed partial class DashboardViewModel : ObservableObject
 
         if (SystemDriveAlmostFull)
             Recommendations.Add(new Recommendation($"Disco C: quase cheio ({SystemDrivePercent:0}%)", "Atenção", StatusKind.Warning,
-                "Limpar disco", new RelayCommand(() => Start("cleanmgr.exe"))));
+                "Limpar disco", new RelayCommand(() => Navigate?.Invoke("cleanup"))));
 
         if (_report?.Memory is { Channels: 1, Modules.Count: >= 1 } mem)
             Recommendations.Add(new Recommendation("Memória em single channel", mem.Modules.Count == 1

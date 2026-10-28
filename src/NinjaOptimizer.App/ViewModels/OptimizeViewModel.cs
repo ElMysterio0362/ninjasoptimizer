@@ -134,8 +134,26 @@ public sealed partial class OptimizeViewModel : ObservableObject
     /// <summary>Disparado quando o estado aplicado muda (o Dashboard escuta).</summary>
     public event EventHandler? StateChanged;
 
-    public OptimizeViewModel(OptimizationEngine engine, DialogService dialogs, IElevationService elevation, AppSettings settings, AppLog log)
+    /// <summary>Aba "Limpeza e manutenção".</summary>
+    public CleanupViewModel Cleanup { get; }
+
+    [ObservableProperty] private bool _showCleanup;
+    public bool ShowTweaks
     {
+        get => !ShowCleanup;
+        set => ShowCleanup = !value;
+    }
+
+    partial void OnShowCleanupChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowTweaks));
+        if (value) _ = Cleanup.EnsureAnalyzedAsync();
+    }
+
+    public OptimizeViewModel(OptimizationEngine engine, DialogService dialogs, IElevationService elevation, AppSettings settings, AppLog log,
+        CleanupViewModel cleanup)
+    {
+        Cleanup = cleanup;
         _engine = engine;
         _dialogs = dialogs;
         _elevation = elevation;

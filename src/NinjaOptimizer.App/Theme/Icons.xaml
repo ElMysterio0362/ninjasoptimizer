@@ -32,6 +32,8 @@
     <Geometry x:Key="Icon.Clock">M3,12 A9,9 0 1 0 21,12 A9,9 0 1 0 3,12 Z M12,7 V12 L15,14</Geometry>
     <Geometry x:Key="Icon.Folder">M3,7 A2,2 0 0 1 5,5 H9 L11,7 H19 A2,2 0 0 1 21,9 V17 A2,2 0 0 1 19,19 H5 A2,2 0 0 1 3,17 Z</Geometry>
     <Geometry x:Key="Icon.File">M14,3 H7 A2,2 0 0 0 5,5 V19 A2,2 0 0 0 7,21 H17 A2,2 0 0 0 19,19 V8 Z M14,3 V8 H19</Geometry>
+    <Geometry x:Key="Icon.Trash">M4,7 H20 M9,7 V4 H15 V7 M6,7 L7,20 H17 L18,7 M10,11 V16 M14,11 V16</Geometry>
+    <Geometry x:Key="Icon.Broom">M14,4 L20,10 M17,7 L11,13 M11,13 L4,20 M8,10 L14,16 L11,19 C9,21 5,21 3,21 C3,19 3,15 5,13 Z</Geometry>
     <Geometry x:Key="Icon.Minimize">M6,12 H18</Geometry>
     <Geometry x:Key="Icon.Maximize">M7.5,5.5 H16.5 A2,2 0 0 1 18.5,7.5 V16.5 A2,2 0 0 1 16.5,18.5 H7.5 A2,2 0 0 1 5.5,16.5 V7.5 A2,2 0 0 1 7.5,5.5 Z</Geometry>
     <Geometry x:Key="Icon.Close">M6,6 L18,18 M18,6 L6,18</Geometry>

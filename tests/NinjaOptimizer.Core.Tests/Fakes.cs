@@ -47,9 +47,25 @@ internal sealed class FakePowerCfg : ICommandRunner
     public HashSet<string> HiddenSettings { get; } = ["0cc5b647-c1df-4637-891a-dec35c318583"];
     private uint GetSetting(string scheme, string sub, string set) => Settings.TryGetValue($"{scheme}|{sub}|{set}", out var v) ? v : 50;
 
+    /// <summary>Estados de recursos ligados/desligados por comando.</summary>
+    public bool MemoryCompression { get; set; } = true;
+    public bool Hibernate { get; set; } = true;
+
     public Task<CommandResult> RunAsync(string fileName, string arguments, CancellationToken ct = default)
     {
         Log.Add(arguments);
+        if (fileName == "powershell")
+        {
+            if (arguments.Contains("(Get-MMAgent).MemoryCompression")) return Task.FromResult(new CommandResult(0, MemoryCompression ? "True\r\n" : "False\r\n", ""));
+            if (arguments.Contains("Enable-MMAgent -MemoryCompression")) { MemoryCompression = true; return Task.FromResult(new CommandResult(0, "", "")); }
+            if (arguments.Contains("Disable-MMAgent -MemoryCompression")) { MemoryCompression = false; return Task.FromResult(new CommandResult(0, "", "")); }
+            return Task.FromResult(new CommandResult(1, "", "comando desconhecido"));
+        }
+        if (fileName == "reg" && arguments.Contains("HibernateEnabled"))
+            return Task.FromResult(new CommandResult(0,
+                $"\r\nHKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power\r\n    HibernateEnabled    REG_DWORD    0x{(Hibernate ? 1 : 0)}\r\n", ""));
+        if (arguments == "/h on") { Hibernate = true; return Task.FromResult(new CommandResult(0, "", "")); }
+        if (arguments == "/h off") { Hibernate = false; return Task.FromResult(new CommandResult(0, "", "")); }
         var parts = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         CommandResult ok(string o = "") => new(0, o, "");
         CommandResult fail() => new(1, "", "erro");

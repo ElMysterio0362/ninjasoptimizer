@@ -38,6 +38,12 @@ public static class TweakCatalog
     private const string LinkStatePowerManagement = "ee12f906-d277-404b-b6da-e5fa1a576df5";
     private const string GraphicsDrivers = @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
 
+    private const string FileSystem = @"SYSTEM\CurrentControlSet\Control\FileSystem";
+    private const string MemoryManagement = @"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
+
+    private static CommandLine MmAgentQuery => new("powershell", "-NoProfile -NonInteractive -Command \"(Get-MMAgent).MemoryCompression\"");
+    private static CommandLine HibernateQuery => new("reg", @"query HKLM\SYSTEM\CurrentControlSet\Control\Power /v HibernateEnabled");
+
     private const string GamesTask = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
 
     private static List<Tweak> Build() =>
@@ -450,6 +456,93 @@ public static class TweakCatalog
             RequiresRestart = true,
             Profiles = P(), // correção específica: fica fora dos perfis
             Actions = [LmDword(@"SOFTWARE\Microsoft\Windows\Dwm", "OverlayTestMode", 5)],
+        },
+        // ═════════════ Etapa 2C · Disco ═════════════
+        new Tweak
+        {
+            Id = "storage.trim",
+            Name = "Garantir o TRIM do SSD ligado",
+            Description =
+                "O TRIM avisa o SSD quais blocos foram apagados, para ele limpá-los com antecedência. " +
+                "Vem ligado no Windows; este ajuste religa se algum programa desligou.",
+            Benefit = "Mantém a velocidade de escrita do SSD com o tempo.",
+            Category = TweakCategory.Disk,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Medium,
+            Profiles = P(Safe, Balanced, MaxPerformance, Gamer),
+            Actions = [LmDword(FileSystem, "DisableDeleteNotification", 0)],
+        },
+        new Tweak
+        {
+            Id = "storage.last-access",
+            Name = "Não gravar a data de último acesso dos arquivos",
+            Description =
+                "O Windows deixa de atualizar a data de \"último acesso\" toda vez que um arquivo é aberto. " +
+                "Poucos programas de backup antigos usam essa informação.",
+            Benefit = "Menos gravações no disco, principalmente em pastas com muitos arquivos.",
+            Category = TweakCategory.Disk,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(Balanced, MaxPerformance, Gamer),
+            Actions = [LmDword(FileSystem, "NtfsDisableLastAccessUpdate", 0x80000001)],
+        },
+        new Tweak
+        {
+            Id = "storage.hibernation-off",
+            Name = "Desativar a hibernação",
+            Description =
+                "Apaga o arquivo de hibernação, que ocupa no disco quase o tamanho da sua RAM. " +
+                "O PC deixa de hibernar e a inicialização rápida do Windows é desligada.",
+            Benefit = "Libera vários GB no disco do Windows (cerca de 6 a 13 GB num PC com 16 GB de RAM).",
+            Category = TweakCategory.Disk,
+            Risk = RiskLevel.Medium, // notebooks perdem a hibernação; o boot a frio fica um pouco mais lento
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Actions =
+            [
+                new CommandStateAction("Hibernação", HibernateQuery, CommandStateAction.ParseRegDword,
+                    new CommandLine("powercfg", "/h on"), new CommandLine("powercfg", "/h off"), target: false),
+            ],
+        },
+
+        // ═════════════ Etapa 2C · Memória ═════════════
+        new Tweak
+        {
+            Id = "memory.pagefile-auto",
+            Name = "Deixar o Windows gerenciar o arquivo de paginação",
+            Description =
+                "Volta o arquivo de paginação para o tamanho automático na unidade do Windows. Use se você o desativou " +
+                "ou fixou um tamanho e tem travamentos, jogos fechando ou avisos de memória insuficiente.",
+            Benefit = "Evita falhas por falta de memória em jogos pesados.",
+            Category = TweakCategory.Memory,
+            Risk = RiskLevel.Medium, // substitui uma configuração manual do usuário
+            Impact = ImpactLevel.Medium,
+            RequiresRestart = true,
+            Profiles = P(),
+            Actions = [new RegistryValueAction(RegHive.LocalMachine, MemoryManagement, "PagingFiles",
+                new RegValue(RegKind.MultiString, new[] { @"?:\pagefile.sys" }))],
+        },
+        new Tweak
+        {
+            Id = "memory.compression-off",
+            Name = "Desativar a compressão de memória",
+            Description =
+                "O Windows para de comprimir páginas da RAM para caber mais coisa nela. Só vale a pena com 32 GB ou mais: " +
+                "com menos memória, o PC pode passar a usar mais o disco.",
+            Benefit = "Libera um pouco de CPU que seria gasto comprimindo e descomprimindo memória.",
+            Category = TweakCategory.Memory,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(),
+            Actions =
+            [
+                new CommandStateAction("Compressão de memória", MmAgentQuery, CommandStateAction.ParseBool,
+                    new CommandLine("powershell", "-NoProfile -NonInteractive -Command \"Enable-MMAgent -MemoryCompression\""),
+                    new CommandLine("powershell", "-NoProfile -NonInteractive -Command \"Disable-MMAgent -MemoryCompression\""),
+                    target: false),
+            ],
         },
     ];
 }
