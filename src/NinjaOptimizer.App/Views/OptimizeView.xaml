@@ -34,7 +34,7 @@
                               ToolTip="Selecionar para aplicar" />
 
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Style="{StaticResource PillSuccess}" Margin="8,0,0,0" Visibility="{Binding IsApplied, Converter={StaticResource BoolToVis}}">
+                        <Border Style="{StaticResource KindPill}" Tag="{Binding AppliedKind}" Margin="8,0,0,0" Visibility="{Binding IsApplied, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <c:Icon Data="{StaticResource Icon.Check}" Size="13" Margin="0,0,5,0" />
                                 <TextBlock Text="{Binding AppliedText}" />
@@ -155,6 +155,18 @@
                     <Run Text="Escolha o que o NinjaOptimizer ajusta no seu PC." />
                     <Run Text="{Binding AppliedCount, Mode=OneWay}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" /><Run Text=" de " Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" /><Run Text="{Binding TotalCount, Mode=OneWay}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" />
                     <Run Text="ativas." />
+                </TextBlock>
+                <TextBlock Foreground="{StaticResource WarningBrush}" Margin="0,4,0,0"
+                           Text="{Binding PendingRestartCount, StringFormat='{}{0} ajuste(s) esperando você sair e entrar de novo na conta (ou reiniciar o PC) para valer.'}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource Small}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding PendingRestartCount}" Value="0">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
                 </TextBlock>
             </StackPanel>
         </DockPanel>

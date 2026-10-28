@@ -33,6 +33,7 @@ public sealed partial class MainViewModel : ObservableObject
         DashboardViewModel dashboard,
         OptimizeViewModel optimize,
         HardwareViewModel hardware,
+        BenchmarkViewModel benchmark,
         SettingsViewModel settings,
         IElevationService elevation)
     {
@@ -42,10 +43,7 @@ public sealed partial class MainViewModel : ObservableObject
             new("dashboard", "Dashboard", "Icon.Dashboard", dashboard),
             new("optimize", "Otimizar", "Icon.Bolt", optimize),
             new("hardware", "Hardware", "Icon.Cpu", hardware),
-            new("benchmark", "Benchmark", "Icon.Benchmark", new PlaceholderViewModel("Benchmark",
-                "Mede CPU, GPU, RAM e disco e mostra o ganho de cada otimização.", "Etapa 3", "Icon.Benchmark",
-                ["Testes de CPU (um núcleo e todos), memória (velocidade e latência), disco (sequencial e 4K) e GPU",
-                 "Pontuação final de 0 a 100", "Comparação antes e depois das otimizações", "Histórico salvo no seu PC"])),
+            new("benchmark", "Benchmark", "Icon.Benchmark", benchmark),
             new("overlay", "Overlay de FPS", "Icon.Overlay", new PlaceholderViewModel("Overlay de FPS",
                 "FPS, 1% mínimo, tempo de quadro e sensores por cima do jogo.", "Etapa 4", "Icon.Overlay",
                 ["Lê os quadros pelo próprio Windows (ETW), sem injetar nada no jogo: compatível com anti-cheat",

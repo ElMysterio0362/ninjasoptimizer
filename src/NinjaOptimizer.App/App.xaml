@@ -12,6 +12,9 @@
             </ResourceDictionary.MergedDictionaries>
             <c:ProfileNameConverter x:Key="ProfileName" />
             <c:ResourceKeyConverter x:Key="ResourceKey" />
+            <c:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+            <c:EmptyToCollapsedConverter x:Key="EmptyToCollapsed" />
+            <c:AllFalseToVisibilityConverter x:Key="AllFalseToVis" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

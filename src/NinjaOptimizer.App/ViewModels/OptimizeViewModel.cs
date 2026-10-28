@@ -59,6 +59,7 @@ public sealed partial class TweakItemViewModel(Tweak tweak) : ObservableObject
 
     /// <summary>"Aplicado" (pelo app, desfazível no histórico) ou "Já configurado" (o sistema já estava assim).</summary>
     [ObservableProperty] private string _appliedText = "Aplicado";
+    [ObservableProperty] private StatusKind _appliedKind = StatusKind.Ok;
 }
 
 public sealed partial class CategoryFilter(string title, TweakCategory? category) : ObservableObject
@@ -105,6 +106,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
     [ObservableProperty] private string _status = "";
     [ObservableProperty] private int _selectedCount;
     [ObservableProperty] private int _appliedCount;
+    [ObservableProperty] private int _pendingRestartCount;
 
     public int TotalCount => Items.Count;
     public IEnumerable<TweakItemViewModel> AllItems => Items;
@@ -175,13 +177,18 @@ public sealed partial class OptimizeViewModel : ObservableObject
     [RelayCommand]
     public async Task RefreshStatusAsync()
     {
-        var byApp = _engine.Journal.ActiveEntries.Select(e => e.TweakId).ToHashSet();
+        // Ajustes que pedem reinício e foram aplicados depois que o Windows ligou ainda não valem.
+        var bootTime = DateTimeOffset.Now - TimeSpan.FromMilliseconds(Environment.TickCount64);
+        var byApp = _engine.Journal.ActiveEntries.GroupBy(e => e.TweakId).ToDictionary(g => g.Key, g => g.Max(e => e.AppliedAt));
         foreach (var item in Items)
         {
-            item.AppliedText = byApp.Contains(item.Tweak.Id) ? "Aplicado" : "Já configurado";
+            var pending = item.Tweak.RequiresRestart && byApp.TryGetValue(item.Tweak.Id, out var at) && at > bootTime;
+            item.AppliedText = pending ? "Aplicado · reinicie para valer" : byApp.ContainsKey(item.Tweak.Id) ? "Aplicado" : "Já configurado";
+            item.AppliedKind = pending ? StatusKind.Warning : StatusKind.Ok;
             try { item.IsApplied = await Task.Run(() => _engine.IsAppliedAsync(item.Tweak)); }
             catch (Exception ex) { _log.Error($"Status de {item.Tweak.Id}", ex); }
         }
+        PendingRestartCount = Items.Count(i => i.IsApplied && i.AppliedKind == StatusKind.Warning);
         UpdateCounts();
         RefreshHistory();
         StateChanged?.Invoke(this, EventArgs.Empty);

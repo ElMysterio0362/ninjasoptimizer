@@ -18,7 +18,7 @@ Identidade visual: preto de base, roxo `#44088C` como lâmina, Sora + Inter. Vej
 | Otimizar (toggles, perfis, aplicar/reverter, histórico com desfazer) | ✅ motor completo + 3 otimizações |
 | Segurança (ponto de restauração, backup .reg, journal, confirmação de risco alto, admin sob demanda) | ✅ |
 | Catálogo completo de otimizações | Etapa 2 |
-| Benchmark | Etapa 3 |
+| Benchmark | ✅ básico (CPU, memória, disco, histórico e comparação); GPU na Etapa 3 |
 | Overlay em jogos | Etapa 4 |
 | Gargalos e compatibilidade | Etapa 5 |
 

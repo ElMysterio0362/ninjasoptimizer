@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NinjaOptimizer.App.Services;
 using NinjaOptimizer.App.ViewModels;
 using NinjaOptimizer.Core.Abstractions;
+using NinjaOptimizer.Core.Benchmark;
 using NinjaOptimizer.Core.Hardware;
 using NinjaOptimizer.Core.Optimization;
 using NinjaOptimizer.Core.Safety;
@@ -96,6 +97,13 @@ public partial class App : Application
         s.AddSingleton<OptimizeViewModel>();
         s.AddSingleton<DashboardViewModel>();
         s.AddSingleton<HardwareViewModel>();
+        s.AddSingleton(sp => new BenchmarkStore(Path.Combine(sp.GetRequiredService<IAppPaths>().DataFolder, "benchmarks.json")));
+        s.AddSingleton(new BenchmarkOptions
+        {
+            // FILE_FLAG_NO_BUFFERING: mede o disco, não o cache de memória do Windows.
+            DiskFileOptions = FileOptions.WriteThrough | (FileOptions)0x20000000,
+        });
+        s.AddSingleton<BenchmarkViewModel>();
         s.AddSingleton<SettingsViewModel>();
         s.AddSingleton<MainViewModel>();
 

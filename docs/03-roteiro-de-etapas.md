@@ -57,6 +57,29 @@ Testes: cada ajuste do catálogo é aplicado e revertido automaticamente, com o 
 3. Saia e entre de novo na conta: animações reduzidas, busca sem resultados da web, mouse sem aceleração.
 4. *Reverter tudo* e confira que os valores voltaram (ou sumiram, se não existiam).
 
+## ✅ Benchmark básico (antecipado da Etapa 3)
+
+Para medir cada bloco da Etapa 2 conforme ele fica pronto.
+
+| Teste | Como mede | Referência (1.000 pontos) |
+|---|---|---|
+| CPU · um núcleo / todos os núcleos | SHA-256 + crivo de primos + ponto flutuante, rodadas por segundo | 8.000 / 50.000 rodadas/s |
+| Memória · velocidade | Cópia entre dois blocos de 128 MB (leitura + escrita) | 25 GB/s |
+| Memória · latência | Saltos aleatórios encadeados em 128 MB | 90 ns |
+| Disco · sequencial | Arquivo de 256 MB, blocos de 1 MB, sem cache do Windows | 2.000 MB/s |
+| Disco · aleatório 4K | Blocos de 4 KB, uma operação por vez, sem cache | 60 MB/s |
+
+* PC de referência: classe Ryzen 5 3600, DDR4-3200 dual channel, SSD NVMe PCIe 3.0. Os valores são fixos para o histórico continuar comparável.
+* Cada teste roda 3 vezes e usa a mediana. Mudanças abaixo de 3% (ou abaixo da variação medida entre as amostras) aparecem como "Sem mudança".
+* Histórico em `benchmarks.json`, com as otimizações ativas em cada medição. A base de comparação é a medição anterior, ou a que você escolher ("Usar como base").
+* Ajustes que só valem depois de reiniciar aparecem como "Aplicado · reinicie para valer" até o próximo reinício.
+
+Fica para a Etapa 3: teste de GPU (cena 3D) e gráficos do histórico.
+
+### Como testar
+1. Benchmark → *Rodar benchmark* (cerca de 1 minuto). Rode duas vezes seguidas: a maioria dos testes deve dar "Sem mudança".
+2. Aplique o plano *Desempenho Máximo* (Otimizar → CPU) e rode de novo: os testes de CPU tendem a subir ou ficar iguais.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 
