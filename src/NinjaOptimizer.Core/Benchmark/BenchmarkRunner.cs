@@ -62,8 +62,8 @@ public sealed class BenchmarkRunner
             () => CpuThroughput(Environment.ProcessorCount, options.CpuSampleDuration, ct)), ct));
         done++;
 
-        Report("Memória · velocidade");
-        results.Add(await Task.Run(() => Sampled(BenchmarkKind.MemoryBandwidth, "Memória · velocidade", "GB/s", true, options.Samples,
+        Report("Memória · velocidade de transferência");
+        results.Add(await Task.Run(() => Sampled(BenchmarkKind.MemoryBandwidth, "Memória · velocidade de transferência", "GB/s", true, options.Samples,
             () => MemoryBandwidth(options.MemoryBlockBytes, ct)), ct));
         done++;
 

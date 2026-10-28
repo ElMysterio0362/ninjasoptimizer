@@ -168,7 +168,8 @@ public sealed partial class BenchmarkViewModel : ObservableObject
             var (text, kind) = comparisons is null ? ("Primeira medição", StatusKind.Neutral)
                 : comparisons.TryGetValue(r.Kind, out var c) ? ChangeLabel(c.Verdict, c.PercentChange)
                 : ("Sem comparação", StatusKind.Neutral);
-            Cards.Add(new ResultCard(IconOf(r.Kind), r.Name, FormatValue(r), r.Unit, r.Detail, $"{r.Score:N0} pontos", text, kind));
+            Cards.Add(new ResultCard(IconOf(r.Kind), DisplayName(r), FormatValue(r), r.Unit, r.Detail ?? Explanation(r.Kind),
+                $"{r.Score:N0} pontos", text, kind));
         }
 
         OverallText = $"{Shown.Overall:N0}";
@@ -210,6 +211,24 @@ public sealed partial class BenchmarkViewModel : ObservableObject
         ChangeVerdict.Better => ($"+{pct:0.0}%", StatusKind.Ok),
         ChangeVerdict.Worse => ($"{pct:0.0}%".Replace("-", "−"), StatusKind.Warning),
         _ => ("Sem mudança", StatusKind.Neutral),
+    };
+
+    /// <summary>Nome exibido pelo tipo de teste (também corrige medições antigas do histórico).</summary>
+    private static string DisplayName(BenchmarkResult r) => r.Kind switch
+    {
+        BenchmarkKind.MemoryBandwidth => "Memória · velocidade de transferência",
+        BenchmarkKind.MemoryLatency => "Memória · latência",
+        _ => r.Name,
+    };
+
+    /// <summary>O que o número significa, para não confundir velocidade (GB/s) com quantidade (GB).</summary>
+    private static string? Explanation(BenchmarkKind k) => k switch
+    {
+        BenchmarkKind.MemoryBandwidth => "Dados que a RAM lê e grava por segundo. Não é a quantidade de memória.",
+        BenchmarkKind.MemoryLatency => "Tempo de cada acesso aleatório à RAM. Menor é melhor.",
+        BenchmarkKind.CpuSingle => "Velocidade de um núcleo. Pesa em jogos e no uso do dia a dia.",
+        BenchmarkKind.CpuMulti => "Todos os núcleos juntos. Pesa em edição, compilação e jogos novos.",
+        _ => null,
     };
 
     private static string IconOf(BenchmarkKind k) => k switch
