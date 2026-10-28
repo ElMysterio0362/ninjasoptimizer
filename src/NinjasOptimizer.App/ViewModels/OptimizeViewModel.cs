@@ -27,6 +27,9 @@ public sealed partial class TweakItemViewModel(Tweak tweak) : ObservableObject
 
     [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private bool _isApplied;
+
+    /// <summary>"Aplicado" (pelo app, desfazível no histórico) ou "Já configurado" (o sistema já estava assim).</summary>
+    [ObservableProperty] private string _appliedText = "Aplicado";
 }
 
 public sealed class TweakGroupViewModel(string title, string glyph, IEnumerable<TweakItemViewModel> items)
@@ -122,8 +125,10 @@ public sealed partial class OptimizeViewModel : ObservableObject
     [RelayCommand]
     public async Task RefreshStatusAsync()
     {
+        var byApp = _engine.Journal.ActiveEntries.Select(e => e.TweakId).ToHashSet();
         foreach (var item in AllItems)
         {
+            item.AppliedText = byApp.Contains(item.Tweak.Id) ? "Aplicado" : "Já configurado";
             try { item.IsApplied = await Task.Run(() => _engine.IsAppliedAsync(item.Tweak)); }
             catch (Exception ex) { _log.Error($"Status de {item.Tweak.Id}", ex); }
         }

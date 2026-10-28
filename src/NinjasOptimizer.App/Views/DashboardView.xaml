@@ -1,7 +1,8 @@
 <UserControl x:Class="NinjasOptimizer.App.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:c="clr-namespace:NinjasOptimizer.App.Controls">
+             xmlns:c="clr-namespace:NinjasOptimizer.App.Controls"
+             xmlns:local="clr-namespace:NinjasOptimizer.App.Views">
     <UserControl.Resources>
         <!-- Card de métrica ao vivo com sparkline -->
         <Style x:Key="LiveCard" TargetType="Border" BasedOn="{StaticResource Card}">
@@ -69,6 +70,7 @@
 
             <!-- ───────── Tempo real ───────── -->
             <TextBlock Style="{StaticResource Caption}" Text="TEMPO REAL" Margin="0,26,0,10" />
+            <local:SensorAccessBanner DataContext="{Binding Live}" Margin="0,0,0,12" />
             <Grid DataContext="{Binding Live}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />

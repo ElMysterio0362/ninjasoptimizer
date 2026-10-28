@@ -60,7 +60,7 @@ public sealed partial class DashboardViewModel : ObservableObject
             Summary.Add(new("\uE964", "MEMÓRIA", $"{Format.Bytes(m.TotalBytes)} {m.Modules.FirstOrDefault()?.Type}",
                 $"{m.EffectiveSpeedMts} MT/s · {m.ChannelMode} · {m.UsedSlots}/{m.TotalSlots} slots"));
             Summary.Add(new("\uEDA2", "ARMAZENAMENTO", $"{r.Disks.Count} disco(s) · {Format.DiskSize((ulong)r.Disks.Sum(d => (decimal)d.SizeBytes))}",
-                string.Join(" · ", r.Disks.Select(d => $"{d.BusType} {d.MediaType}").Distinct())));
+                string.Join(" · ", r.Disks.Select(d => d.TypeLabel).Distinct())));
             Summary.Add(new("\uE770", "SISTEMA", r.Os.Name, $"{r.Os.DisplayVersion} · build {r.Os.Build} · {r.Os.Architecture}"));
             var mon = r.Monitors.FirstOrDefault();
             Summary.Add(new("\uE7F8", "MONITOR", mon?.Name ?? "—", mon is null ? "" : $"{mon.Width}×{mon.Height} @ {mon.RefreshHz} Hz"));
@@ -157,7 +157,7 @@ public sealed partial class HardwareViewModel(HardwareState hardware, LiveSensor
             [
                 new("Modelo", d.Model),
                 new("Capacidade", Format.DiskSize(d.SizeBytes)),
-                new("Tipo", $"{(d.MediaType == DiskMediaType.Unknown ? "—" : d.MediaType.ToString().ToUpperInvariant())} · {d.BusType}"),
+                new("Tipo", d.MediaType == DiskMediaType.Unknown ? $"Não informado · {d.BusType}" : d.TypeLabel.Replace(" ", " · ")),
                 new("Velocidade esperada", d.SpeedClass),
                 new("Saúde", d.Health + (d.WearPercent is { } w ? $" · desgaste {w}%" : "")),
                 new("Temperatura", d.TemperatureC is { } t ? $"{t} °C" : "— (requer administrador)"),

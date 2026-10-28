@@ -51,6 +51,14 @@ public sealed record DiskInfo(
     int? TemperatureC,
     int? WearPercent)
 {
+    public string TypeLabel => MediaType switch
+    {
+        DiskMediaType.Hdd => $"HDD {BusType}",
+        DiskMediaType.Ssd => $"SSD {BusType}",
+        DiskMediaType.Scm => $"SCM {BusType}",
+        _ => BusType,
+    };
+
     /// <summary>Classe de velocidade esperada pela interface (a velocidade real vem do benchmark).</summary>
     public string SpeedClass => (MediaType, BusType) switch
     {
@@ -86,6 +94,9 @@ public sealed record SensorSnapshot
     public float? CpuLoad { get; init; }
     public float? CpuTempC { get; init; }
     public float? CpuClockMhz { get; init; }
+
+    /// <summary>True quando o clock vem do contador de desempenho do Windows (sem driver), não dos núcleos.</summary>
+    public bool CpuClockEstimated { get; init; }
     public float? CpuPowerW { get; init; }
     public float? GpuLoad { get; init; }
     public float? GpuTempC { get; init; }
@@ -99,8 +110,31 @@ public sealed record SensorSnapshot
     public static SensorSnapshot Empty { get; } = new();
 }
 
+/// <summary>O que limita a leitura dos sensores de baixo nível (temperatura/clock/consumo da CPU).</summary>
+public enum SensorAccess
+{
+    Full,
+    /// <summary>App não está como administrador.</summary>
+    NeedsAdmin,
+    /// <summary>Administrador, mas o driver PawnIO (usado pela LibreHardwareMonitor) não está instalado.</summary>
+    NeedsDriver,
+}
+
+/// <summary>Descarta leituras impossíveis (sensores sem acesso devolvem 0 em vez de "indisponível").</summary>
+public static class SensorValues
+{
+    public static float? Temperature(float? v) => v is > 1 and < 130 ? v : null;
+    public static float? Positive(float? v) => v is > 0 and < 1_000_000 ? v : null;
+    public static float? Percent(float? v) => v is >= 0 and <= 100 ? v : null;
+}
+
 public interface ISensorService : IDisposable
 {
+    SensorAccess Access { get; }
+
+    /// <summary>Reabre os sensores (ex.: depois de instalar o driver).</summary>
+    void Reset();
+
     /// <summary>Disparado a cada leitura (em thread de fundo).</summary>
     event EventHandler<SensorSnapshot>? Updated;
     SensorSnapshot Latest { get; }

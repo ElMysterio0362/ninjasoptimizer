@@ -106,10 +106,12 @@ public sealed class WmiHardwareProvider : IHardwareProvider
     {
         const string scope = @"root\Microsoft\Windows\Storage";
         var disks = new List<DiskInfo>();
-        foreach (var d in Query("SELECT ObjectId, FriendlyName, Size, MediaType, BusType, HealthStatus FROM MSFT_PhysicalDisk", scope))
+        foreach (var d in Query("SELECT ObjectId, FriendlyName, Size, MediaType, BusType, HealthStatus, SpindleSpeed FROM MSFT_PhysicalDisk", scope))
         {
-            var media = I(d, "MediaType") switch { 3 => DiskMediaType.Hdd, 4 => DiskMediaType.Ssd, 5 => DiskMediaType.Scm, _ => DiskMediaType.Unknown };
+            var reported = I(d, "MediaType") switch { 3 => DiskMediaType.Hdd, 4 => DiskMediaType.Ssd, 5 => DiskMediaType.Scm, _ => DiskMediaType.Unknown };
             var bus = I(d, "BusType") switch { 17 => "NVMe", 11 => "SATA", 7 => "USB", 8 => "RAID", 10 => "SAS", 3 => "ATA", var x => $"Barramento {x}" };
+            var spindle = d["SpindleSpeed"] is null ? uint.MaxValue : Convert.ToUInt32(d["SpindleSpeed"]);
+            var media = DiskTypeHeuristics.Infer(S(d, "FriendlyName"), reported, bus, spindle);
             var health = I(d, "HealthStatus") switch { 0 => "Saudável", 1 => "Atenção", 2 => "Com problemas", _ => "Desconhecida" };
 
             // Temperatura e desgaste: exigem admin e suporte do driver; ficam nulos se indisponíveis.

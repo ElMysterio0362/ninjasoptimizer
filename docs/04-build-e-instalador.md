@@ -41,8 +41,10 @@ e anexa o `.exe` do instalador como artefato da execução (aba *Actions* do Git
 
 ## Observações
 
-* **Antivírus:** a biblioteca de sensores (LibreHardwareMonitor) carrega um driver de kernel para ler temperaturas
-  e alguns antivírus podem alertar. Se os sensores falharem, o app continua funcionando só com WMI.
+* **Sensores da CPU (temperatura, clock por núcleo, consumo):** a LibreHardwareMonitor 0.9.6 lê esses valores pelo
+  driver **PawnIO** (código aberto, assinado). São necessários o app como administrador **e** o PawnIO instalado
+  (`https://pawnio.eu`). O app detecta o que falta, mostra um aviso com o botão certo e, sem o driver, estima o clock
+  pelo contador "% Processor Performance" do Windows (o mesmo do Gerenciador de Tarefas). GPU e RAM funcionam sem nada disso.
 * **Assinatura de código:** para distribuição pública, assine o `.exe` e o instalador (`signtool sign /fd sha256 /tr <timestamp> /td sha256 ...`)
   para evitar o aviso do SmartScreen.
 * **Compilar no Linux/macOS:** possível graças a `EnableWindowsTargeting` (útil para CI), mas o app só executa no Windows.

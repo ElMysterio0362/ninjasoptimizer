@@ -62,3 +62,33 @@ public sealed class HardwareTests
     public void RegValue_roundtrips(RegKind kind, string raw) =>
         Assert.Equal(raw, RegValue.Deserialize(kind, raw).Serialize());
 }
+
+public sealed class DiskAndSensorTests
+{
+    [Theory]
+    [InlineData("Hitachi HTS542525K9SA00", "SATA", uint.MaxValue, DiskMediaType.Hdd)]
+    [InlineData("ST1000DM010-2EP102", "SATA", uint.MaxValue, DiskMediaType.Hdd)]
+    [InlineData("WDC WD10EZEX-08WN4A0", "SATA", uint.MaxValue, DiskMediaType.Hdd)]
+    [InlineData("KINGSTON SA400S37240G", "SATA", uint.MaxValue, DiskMediaType.Ssd)]
+    [InlineData("Samsung SSD 870 EVO 500GB", "SATA", uint.MaxValue, DiskMediaType.Ssd)]
+    [InlineData("Qualquer", "NVMe", uint.MaxValue, DiskMediaType.Ssd)]
+    [InlineData("Qualquer", "SATA", 7200u, DiskMediaType.Hdd)]
+    [InlineData("Qualquer", "SATA", 0u, DiskMediaType.Ssd)]
+    [InlineData("Qualquer", "SATA", uint.MaxValue, DiskMediaType.Unknown)]
+    public void Infers_disk_type_when_windows_does_not_report(string model, string bus, uint spindle, DiskMediaType expected) =>
+        Assert.Equal(expected, DiskTypeHeuristics.Infer(model, DiskMediaType.Unknown, bus, spindle));
+
+    [Fact]
+    public void Reported_type_wins() =>
+        Assert.Equal(DiskMediaType.Ssd, DiskTypeHeuristics.Infer("HTS5425", DiskMediaType.Ssd, "SATA", 5400));
+
+    [Fact]
+    public void Zero_readings_from_sensors_without_access_become_unavailable()
+    {
+        Assert.Null(SensorValues.Temperature(0));
+        Assert.Equal(55f, SensorValues.Temperature(55));
+        Assert.Null(SensorValues.Positive(0));
+        Assert.Equal(3800f, SensorValues.Positive(3800));
+        Assert.Null(SensorValues.Percent(null));
+    }
+}

@@ -1,6 +1,7 @@
 <UserControl x:Class="NinjasOptimizer.App.Views.HardwareView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:NinjasOptimizer.App.Views">
     <UserControl.Resources>
         <Style x:Key="LiveLabel" TargetType="TextBlock" BasedOn="{StaticResource Muted}">
             <Setter Property="FontSize" Value="12" />
@@ -52,7 +53,7 @@
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Style="{StaticResource Caption}" Text=" " Margin="0,0,0,10" />
-                            <TextBlock Style="{StaticResource LiveLabel}" Text="Clock médio" />
+                            <TextBlock Style="{StaticResource LiveLabel}" Text="Clock médio" ToolTip="Sem o driver, o clock é estimado pelo contador de desempenho do Windows (como no Gerenciador de Tarefas)." />
                             <TextBlock Style="{StaticResource LiveValue}" Text="{Binding CpuClockText}" />
                             <TextBlock Style="{StaticResource LiveLabel}" Text="Consumo" />
                             <TextBlock Style="{StaticResource LiveValue}" Text="{Binding CpuPowerText}" />
@@ -82,8 +83,7 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-                <TextBlock Style="{StaticResource Muted}" FontSize="11" Margin="2,8,0,0" Foreground="{StaticResource TextFaintBrush}"
-                           Text="Temperaturas de CPU e de discos exigem executar como administrador. Sensores indisponíveis aparecem como —." />
+                <local:SensorAccessBanner DataContext="{Binding Live}" Margin="0,10,0,0" />
 
                 <!-- ───────── Inventário ───────── -->
                 <ItemsControl ItemsSource="{Binding Sections}" Margin="0,18,-14,0">
