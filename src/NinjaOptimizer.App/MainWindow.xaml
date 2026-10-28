@@ -66,8 +66,8 @@
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom">
-                    <ListBox Style="{StaticResource NavList}" ItemsSource="{Binding FooterItems}"
-                             SelectedItem="{Binding Current, Mode=TwoWay}" AutomationProperties.Name="Configurações" />
+                    <ListBox x:Name="FooterList" Style="{StaticResource NavList}" ItemsSource="{Binding FooterItems}"
+                             SelectionChanged="OnNavSelectionChanged" AutomationProperties.Name="Configurações" />
                     <StackPanel Orientation="Horizontal" Margin="12,10,0,0">
                         <Ellipse Width="6" Height="6" VerticalAlignment="Center" Margin="0,0,8,0">
                             <Ellipse.Style>
@@ -85,8 +85,8 @@
                     </StackPanel>
                 </StackPanel>
 
-                <ListBox Style="{StaticResource NavList}" ItemsSource="{Binding NavItems}"
-                         SelectedItem="{Binding Current, Mode=TwoWay}" AutomationProperties.Name="Navegação principal" />
+                <ListBox x:Name="MainList" Style="{StaticResource NavList}" ItemsSource="{Binding NavItems}"
+                         SelectionChanged="OnNavSelectionChanged" AutomationProperties.Name="Navegação principal" />
             </DockPanel>
         </Border>
 
