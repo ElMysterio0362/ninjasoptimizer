@@ -10,6 +10,8 @@ public sealed class AppSettings
 
     /// <summary>A fonte não é detectável por software; o usuário pode informar (usado na análise de gargalos).</summary>
     public string PowerSupply { get; set; } = "";
+
+    public NinjaOptimizer.Core.GameMode.GameModeSettings GameMode { get; set; } = new();
 }
 
 public sealed class SettingsStore(string path)

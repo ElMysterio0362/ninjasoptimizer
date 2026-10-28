@@ -1,4 +1,6 @@
 using NinjaOptimizer.Core.Startup;
+using NinjaOptimizer.Core.GameMode;
+using NinjaOptimizer.Windows.GameMode;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -43,6 +45,7 @@ public partial class App : Application
         var optimize = _services.GetRequiredService<OptimizeViewModel>();
         ApplyStartupArgs(e.Args, main, optimize);
 
+        _services.GetRequiredService<GameModeViewModel>().Start();
         MainWindow = new MainWindow(main);
         MainWindow.Show();
 
@@ -103,6 +106,10 @@ public partial class App : Application
         s.AddSingleton<CleanupViewModel>();
         s.AddSingleton(sp => new StartupManager(sp.GetRequiredService<IRegistryAccess>(), StartupFolders.Files));
         s.AddSingleton<StartupViewModel>();
+        s.AddSingleton<IProcessControl, WindowsProcessControl>();
+        s.AddSingleton(sp => new GameModeService(sp.GetRequiredService<IProcessControl>(),
+            Path.Combine(sp.GetRequiredService<IAppPaths>().DataFolder, "gamemode.json")));
+        s.AddSingleton<GameModeViewModel>();
         s.AddSingleton<OptimizeViewModel>();
         s.AddSingleton<DashboardViewModel>();
         s.AddSingleton<HardwareViewModel>();
@@ -121,6 +128,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _services?.GetService<GameModeViewModel>()?.Shutdown(); // nada fica pausado depois que o app fecha
         _services?.Dispose(); // fecha o driver de sensores
         base.OnExit(e);
     }

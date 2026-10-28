@@ -19,6 +19,7 @@
         <DataTemplate DataType="{x:Type vm:HardwareViewModel}"><views:HardwareView /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><views:SettingsView /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:BenchmarkViewModel}"><views:BenchmarkView /></DataTemplate>
+        <DataTemplate DataType="{x:Type vm:GameModeViewModel}"><views:GameModeView /></DataTemplate>
         <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}"><views:PlaceholderView /></DataTemplate>
 
         <!-- Item do menu: ícone 20 px (Roxo 300 quando ativo) + 12 px + texto -->

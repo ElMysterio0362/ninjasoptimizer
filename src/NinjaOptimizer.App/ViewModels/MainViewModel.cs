@@ -26,6 +26,7 @@ public sealed partial class MainViewModel : ObservableObject
             _current = value;
             OnPropertyChanged();
             if (value.Page is HardwareViewModel hw) _ = hw.LoadAsync();
+            if (value.Page is GameModeViewModel gm) _ = gm.RefreshAppsAsync();
         }
     }
 
@@ -34,6 +35,7 @@ public sealed partial class MainViewModel : ObservableObject
         OptimizeViewModel optimize,
         HardwareViewModel hardware,
         BenchmarkViewModel benchmark,
+        GameModeViewModel gameMode,
         SettingsViewModel settings,
         IElevationService elevation)
     {
@@ -42,6 +44,7 @@ public sealed partial class MainViewModel : ObservableObject
         [
             new("dashboard", "Dashboard", "Icon.Dashboard", dashboard),
             new("optimize", "Otimizar", "Icon.Bolt", optimize),
+            new("gamemode", "Modo Gamer", "Icon.Gamepad", gameMode),
             new("hardware", "Hardware", "Icon.Cpu", hardware),
             new("benchmark", "Benchmark", "Icon.Benchmark", benchmark),
             new("overlay", "Overlay de FPS", "Icon.Overlay", new PlaceholderViewModel("Overlay de FPS",

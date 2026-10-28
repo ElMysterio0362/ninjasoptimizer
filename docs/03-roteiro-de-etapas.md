@@ -163,6 +163,21 @@ Lista os programas que abrem com o Windows (Run da conta, Run da máquina 64/32 
 3. Aba **Inicialização**: desligue um programa, abra o Gerenciador de Tarefas → Inicializar: ele deve aparecer como Desabilitado. Ligue de volta.
 4. Limpeza → **Limpar cache de DNS**.
 
+## ✅ Etapa 2E — Modo Gamer
+
+Página nova **Modo Gamer** no menu lateral.
+- **Detecção de jogo** (a cada 3 s): executáveis em pastas da Steam (`steamapps\common`), Epic, Riot, GOG, Xbox, Battle.net, Ubisoft e EA, mais a lista "Meus jogos". Ignora launchers, crash handlers e instaladores; prefere o que está em primeiro plano.
+- **Pausa** (NtSuspendProcess) os programas marcados na lista, só da sua conta. Lista padrão: OneDrive, Dropbox, Google Drive, Teams, Skype, Vincular ao Celular, Adobe/Creative Cloud. Você liga/desliga cada programa aberto.
+- **Nunca pausa**: partes do Windows, Defender, áudio, drivers NVIDIA/AMD/Intel, anti-cheat (EAC, BattlEye, Vanguard, FACEIT) e o próprio app.
+- **Segurança**: os pausados são gravados em `gamemode.json` a cada pausa; ao fechar o app tudo é retomado, e se ele travar, retoma na próxima abertura. Antes de retomar, confere o horário de início do processo para não mexer num PID reaproveitado.
+- Ligado sozinho → desliga sozinho quando o jogo fecha. Ligado à mão → só desliga à mão.
+
+### Como testar a etapa 2E
+1. Abra o OneDrive (ou outro da lista) e vá em **Modo Gamer → Ligar agora**. No Gerenciador de Tarefas → Detalhes, ele aparece como "Suspenso".
+2. **Desligar e retomar tudo**: volta a "Em execução".
+3. Com "Ligar sozinho" ativo, abra um jogo da Steam: o status muda para "Modo Gamer ligado · nome do jogo". Feche o jogo: em até 3 s tudo é retomado.
+4. Ligue o modo, feche o NinjaOptimizer e confira que nada ficou suspenso.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 
