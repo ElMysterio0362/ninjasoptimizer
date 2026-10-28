@@ -1,8 +1,10 @@
-<p align="center"><img src="src/NinjasOptimizer.App/Assets/logo.png" width="96" /></p>
+<p align="center"><img src="src/NinjaOptimizer.App/Assets/logo.png" width="96" /></p>
 
-# Ninjas Optimizer
+# NinjaOptimizer
 
 Otimizador de Windows com foco em desempenho e segurança: cada ajuste é individual, explicado, classificado por risco e **reversível item a item**.
+
+Identidade visual: preto de base, roxo `#44088C` como lâmina, Sora + Inter. Veja o [guia de identidade visual](docs/05-identidade-visual.md).
 
 **Stack:** C# / .NET 8 + WPF (MVVM) · LibreHardwareMonitor · WMI — veja a [decisão de stack](docs/01-decisao-de-stack.md).
 
@@ -10,7 +12,7 @@ Otimizador de Windows com foco em desempenho e segurança: cada ajuste é indivi
 
 | Módulo | Status |
 |---|---|
-| Interface base (tema preto + `#44088c`, navegação lateral, animações) | ✅ |
+| Interface base com a identidade visual NinjaOptimizer (tema, ícones, fontes, animações) | ✅ |
 | Dashboard (resumo, gráficos ao vivo, otimização rápida) | ✅ |
 | Hardware (inventário completo + sensores em tempo real) | ✅ |
 | Otimizar (toggles, perfis, aplicar/reverter, histórico com desfazer) | ✅ motor completo + 3 otimizações |
@@ -26,11 +28,12 @@ Otimizador de Windows com foco em desempenho e segurança: cada ajuste é indivi
 2. [Estrutura de pastas e arquitetura](docs/02-arquitetura.md)
 3. [Roteiro por etapas e como testar](docs/03-roteiro-de-etapas.md)
 4. [Build e instalador](docs/04-build-e-instalador.md)
+5. [Identidade visual](docs/05-identidade-visual.md)
 
 ## Início rápido
 
 ```powershell
 dotnet test                                  # testes do núcleo (qualquer SO)
-dotnet run --project src/NinjasOptimizer.App # executa (Windows)
+dotnet run --project src/NinjaOptimizer.App # executa (Windows)
 ./build/build.ps1                            # gera o instalador (Windows + Inno Setup 6)
 ```

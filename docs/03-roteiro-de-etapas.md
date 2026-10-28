@@ -18,7 +18,7 @@ Cada etapa só começa depois que a anterior for testada em um Windows real.
 * **Testes**: 28 testes do Core (aplicar/reverter, rollback parcial, risco alto, journal após reinício, parsing do powercfg, canais de RAM).
 
 ### Como testar a etapa 1 no Windows
-1. `dotnet run --project src/NinjasOptimizer.App` (ou o instalador do CI).
+1. `dotnet run --project src/NinjaOptimizer.App` (ou o instalador do CI).
 2. Hardware: confira os dados com o Gerenciador de Tarefas / CPU-Z.
 3. Otimizar → selecione as 3 → *Aplicar selecionadas* → aceite reabrir como admin → confirme.
    * Verifique: `powercfg /getactivescheme`, `reg query "HKCU\System\GameConfigStore" /v GameDVR_Enabled`, `sc qc DiagTrack`.

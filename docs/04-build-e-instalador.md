@@ -13,7 +13,7 @@
 ```powershell
 git clone <url-do-repo>
 cd ninjasoptimizer
-dotnet run --project src/NinjasOptimizer.App
+dotnet run --project src/NinjaOptimizer.App
 ```
 
 Os testes do núcleo rodam em qualquer sistema (inclusive Linux/macOS):
@@ -30,7 +30,7 @@ dotnet test
 ```
 
 O script roda os testes, publica um executável único em `artifacts/publish/` e gera
-`installer/Output/NinjasOptimizer-Setup-<versão>.exe`.
+`installer/Output/NinjaOptimizer-Setup-<versão>.exe`.
 
 Para mudar a versão, edite `<Version>` em `Directory.Build.props`.
 

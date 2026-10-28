@@ -6,8 +6,8 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- Permite compilar os projetos Windows (WPF) também em CI Linux -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>0.1.0</Version>
-    <Company>Ninjas Optimizer</Company>
-    <Product>Ninjas Optimizer</Product>
+    <Version>0.2.0</Version>
+    <Company>NinjaOptimizer</Company>
+    <Product>NinjaOptimizer</Product>
   </PropertyGroup>
 </Project>

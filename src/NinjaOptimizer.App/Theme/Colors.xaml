@@ -1,0 +1,98 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Paleta do guia de marca NinjaOptimizer: preto de base, roxo como lâmina.
+         #44088C é a cor da marca, mas some no preto (1,6:1): para texto e ícones use o Roxo 300. -->
+
+    <!-- ───────── Escala do roxo ───────── -->
+    <Color x:Key="Purple950">#0F0221</Color>
+    <Color x:Key="Purple900">#1D0440</Color>
+    <Color x:Key="Purple800">#2E0661</Color>
+    <Color x:Key="Purple700">#44088C</Color>
+    <Color x:Key="Purple600">#5A12B3</Color>
+    <Color x:Key="Purple500">#7B2FE0</Color>
+    <Color x:Key="Purple400">#9A55F2</Color>
+    <Color x:Key="Purple300">#B98BFF</Color>
+    <Color x:Key="Purple200">#D5BAFF</Color>
+    <Color x:Key="Purple100">#EBDDFF</Color>
+
+    <!-- ───────── Neutros ───────── -->
+    <SolidColorBrush x:Key="BgBrush" Color="#07060B" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#0E0C15" />
+    <SolidColorBrush x:Key="Surface2Brush" Color="#14111D" />
+    <SolidColorBrush x:Key="Surface3Brush" Color="#1C1828" />
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#241F33" />
+    <SolidColorBrush x:Key="BorderBrush" Color="#2A2438" />
+    <SolidColorBrush x:Key="BorderStrongBrush" Color="#3A3350" />
+    <SolidColorBrush x:Key="BorderHoverBrush" Color="#5A5075" />
+    <SolidColorBrush x:Key="DividerBrush" Color="#1C1828" />
+
+    <SolidColorBrush x:Key="TextBrush" Color="#F5F3FA" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#B4AEC4" />
+    <SolidColorBrush x:Key="TextFaintBrush" Color="#8F88A3" />
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="#6F6883" />
+
+    <!-- ───────── Roxo aplicado ───────── -->
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Purple700}" />
+    <SolidColorBrush x:Key="AccentMidBrush" Color="{StaticResource Purple500}" />
+    <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource Purple400}" />
+    <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource Purple300}" />
+    <!-- rgba(123,47,224,.18) e rgba(185,139,255,.28): item ativo, ícone em destaque -->
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#2E7B2FE0" />
+    <SolidColorBrush x:Key="AccentSoftBorderBrush" Color="#47B98BFF" />
+    <SolidColorBrush x:Key="AccentTabBrush" Color="#387B2FE0" />
+    <SolidColorBrush x:Key="AccentTabBorderBrush" Color="#66B98BFF" />
+
+    <!-- ───────── Status (sempre com ícone e texto, nunca só cor) ───────── -->
+    <SolidColorBrush x:Key="SuccessBrush" Color="#3DDC97" />
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#0F2A22" />
+    <SolidColorBrush x:Key="SuccessBorderBrush" Color="#663DDC97" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#FFB547" />
+    <SolidColorBrush x:Key="WarningSoftBrush" Color="#2E2210" />
+    <SolidColorBrush x:Key="WarningBorderBrush" Color="#66FFB547" />
+    <SolidColorBrush x:Key="WarningTextBrush" Color="#E8DCC8" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#FF5C7A" />
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="#2E1020" />
+    <SolidColorBrush x:Key="DangerBorderBrush" Color="#66FF5C7A" />
+    <SolidColorBrush x:Key="DangerTextBrush" Color="#EBD3DA" />
+    <SolidColorBrush x:Key="InfoBrush" Color="#6FA8FF" />
+    <SolidColorBrush x:Key="InfoSoftBrush" Color="#0F1E36" />
+
+    <!-- ───────── Degradês ───────── -->
+    <!-- Botão primário: #5A12B3 → #44088C; hover #6A1FD0 → #5A12B3 -->
+    <LinearGradientBrush x:Key="PrimaryGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#5A12B3" Offset="0" />
+        <GradientStop Color="#44088C" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PrimaryHoverGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#6A1FD0" Offset="0" />
+        <GradientStop Color="#5A12B3" Offset="1" />
+    </LinearGradientBrush>
+    <!-- Botão principal da marca ("Otimização rápida") -->
+    <LinearGradientBrush x:Key="HeroGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#6A1FD0" Offset="0" />
+        <GradientStop Color="#44088C" Offset="1" />
+    </LinearGradientBrush>
+    <!-- Símbolo: #D5BAFF → #7B2FE0 -->
+    <LinearGradientBrush x:Key="SymbolGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#D5BAFF" Offset="0" />
+        <GradientStop Color="#7B2FE0" Offset="1" />
+    </LinearGradientBrush>
+    <!-- Barras de progresso e anel -->
+    <LinearGradientBrush x:Key="BarGradient" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#5A12B3" Offset="0" />
+        <GradientStop Color="#B98BFF" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="ToggleOnGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#7B2FE0" Offset="0" />
+        <GradientStop Color="#5A12B3" Offset="1" />
+    </LinearGradientBrush>
+    <!-- Glow do card principal: radial roxo 500 a 22% no canto superior esquerdo -->
+    <RadialGradientBrush x:Key="HeroGlow" Center="0.12,0" GradientOrigin="0.12,0" RadiusX="0.6" RadiusY="1.1">
+        <GradientStop Color="#387B2FE0" Offset="0" />
+        <GradientStop Color="#007B2FE0" Offset="1" />
+    </RadialGradientBrush>
+
+    <!-- ───────── Tipografia: Sora (títulos, números) e Inter (texto e interface), SIL OFL ───────── -->
+    <FontFamily x:Key="DisplayFont">pack://application:,,,/Assets/Fonts/#Sora, Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="UiFont">pack://application:,,,/Assets/Fonts/#Inter, Segoe UI Variable Text, Segoe UI</FontFamily>
+</ResourceDictionary>

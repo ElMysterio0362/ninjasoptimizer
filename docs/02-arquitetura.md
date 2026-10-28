@@ -4,10 +4,10 @@
 
 ```
 ninjasoptimizer/
-├─ NinjasOptimizer.sln
+├─ NinjaOptimizer.sln
 ├─ Directory.Build.props            # versão, nullable, C# latest (comum a todos os projetos)
 ├─ src/
-│  ├─ NinjasOptimizer.Core/         # net8.0 — lógica pura, sem APIs do Windows (100% testável)
+│  ├─ NinjaOptimizer.Core/         # net8.0 — lógica pura, sem APIs do Windows (100% testável)
 │  │  ├─ Abstractions/              # IRegistryAccess, IServiceManager, ICommandRunner, IRestorePointService…
 │  │  ├─ Optimization/
 │  │  │  ├─ Tweak.cs                # modelo: nome, descrição, benefício, risco, categoria, perfis
@@ -17,18 +17,20 @@ ninjasoptimizer/
 │  │  ├─ Safety/ChangeJournal.cs    # histórico persistido (JSON) com snapshots para desfazer
 │  │  ├─ Hardware/                  # modelos de hardware, sensores, inferência de canais de RAM
 │  │  └─ Settings/                  # configurações do usuário (JSON)
-│  ├─ NinjasOptimizer.Windows/      # net8.0-windows — implementações reais das abstrações
+│  ├─ NinjaOptimizer.Windows/      # net8.0-windows — implementações reais das abstrações
 │  │  ├─ Platform/                  # registro, serviços (sc.exe), processos, elevação, ponto de restauração (WMI), backup .reg
 │  │  └─ Hardware/                  # inventário via WMI/CIM, monitores via user32, sensores via LibreHardwareMonitor
-│  └─ NinjasOptimizer.App/          # WPF (MVVM) — interface
-│     ├─ Theme/                     # Colors.xaml (preto + #44088c), Controls.xaml (botões, toggle, nav, scrollbar…)
-│     ├─ Controls/                  # Sparkline e ProgressRing (desenho direto, leves)
+│  └─ NinjaOptimizer.App/          # WPF (MVVM) — interface
+│     ├─ Assets/                    # app.ico, logo.png e fontes Sora/Inter (SIL OFL)
+│     ├─ Theme/                     # Colors.xaml (paleta da marca), Icons.xaml (ícones), Controls.xaml (componentes)
+│     ├─ Controls/                  # Icon, ProgressRing e UsageChart (desenho direto, leves)
 │     ├─ Services/                  # diálogos, log, estado de hardware e sensores compartilhados
 │     ├─ ViewModels/                # Main, Dashboard, Optimize, Hardware, Settings, Placeholder
 │     └─ Views/                     # uma UserControl por página
-├─ tests/NinjasOptimizer.Core.Tests # xUnit — motor, reversão, journal, parsing (roda em qualquer SO)
-├─ installer/NinjasOptimizer.iss    # Inno Setup 6
+├─ tests/NinjaOptimizer.Core.Tests # xUnit — motor, reversão, journal, parsing (roda em qualquer SO)
+├─ installer/NinjaOptimizer.iss    # Inno Setup 6
 ├─ build/build.ps1                  # testa, publica e gera o instalador
+├─ build/brand/                     # geradores do ícone, das imagens do instalador e dos ícones da interface
 └─ .github/workflows/build.yml      # CI em windows-latest, publica o instalador como artefato
 ```
 
@@ -60,7 +62,7 @@ ninjasoptimizer/
 2. **Já aplicado** → ignorado (nada a registrar).
 3. **Admin** → se algum ajuste precisa e o app não está elevado, aborta sem tocar em nada. A UI oferece reabrir como administrador mantendo a seleção (`--page optimize --select ids`).
 4. **Ponto de restauração** (WMI `SystemRestore.CreateRestorePoint`). O limite de 1 por 24h do Windows é liberado temporariamente e restaurado em seguida. Opcionalmente aborta se falhar.
-5. **Backup .reg** de todas as chaves que serão alteradas (`reg export`), em `%LocalAppData%\NinjasOptimizer\backups\<data-hora>\`.
+5. **Backup .reg** de todas as chaves que serão alteradas (`reg export`), em `%LocalAppData%\NinjaOptimizer\backups\<data-hora>\`.
 6. **Snapshot** de todas as ações do ajuste **antes** de alterar qualquer uma.
 7. **Aplicação atômica por ajuste**: se a 3ª ação falha, as 2 primeiras são desfeitas na hora.
 8. **Journal** (`journal.json`, escrita atômica) com status Aplicado / Revertido / Falhou.
@@ -76,7 +78,7 @@ Reverter: item a item (botão *Desfazer* no histórico) ou *Reverter tudo* (do m
 
 ## Dados locais
 
-`%LocalAppData%\NinjasOptimizer\`
+`%LocalAppData%\NinjaOptimizer\` (na primeira abertura da versão 0.2, a pasta antiga `NinjasOptimizer` é movida para cá, mantendo o histórico para desfazer)
 
 | Arquivo | Conteúdo |
 |---|---|

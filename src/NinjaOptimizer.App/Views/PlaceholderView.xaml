@@ -1,0 +1,40 @@
+<UserControl x:Class="NinjaOptimizer.App.Views.PlaceholderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:NinjaOptimizer.App.Controls">
+    <StackPanel>
+        <TextBlock Style="{StaticResource PageTitle}" Text="{Binding Title}" />
+        <TextBlock Style="{StaticResource Muted}" Text="{Binding Subtitle}" Margin="0,4,0,24" />
+
+        <Border CornerRadius="20" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource SurfaceBrush}"
+                MaxWidth="760" HorizontalAlignment="Left">
+            <Grid>
+                <Border CornerRadius="20" Background="{StaticResource HeroGlow}" IsHitTestVisible="False" />
+                <StackPanel Margin="32">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Right" Style="{StaticResource PillAccent}" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding Stage, StringFormat='Em desenvolvimento · {0}'}" />
+                        </Border>
+                        <Border Style="{StaticResource IconTile}" HorizontalAlignment="Left">
+                            <c:Icon Data="{Binding Icon, Converter={StaticResource ResourceKey}}" Size="22" HorizontalAlignment="Center" />
+                        </Border>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource H3}" Text="O que este módulo vai entregar" Margin="0,20,0,8" />
+                    <ItemsControl ItemsSource="{Binding Features}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" MinHeight="44">
+                                    <DockPanel VerticalAlignment="Center" Margin="0,8">
+                                        <c:Icon DockPanel.Dock="Left" Data="{StaticResource Icon.Check}" Foreground="{StaticResource AccentTextBrush}"
+                                                VerticalAlignment="Top" Margin="0,1,12,0" />
+                                        <TextBlock Style="{StaticResource Body}" Text="{Binding}" />
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </StackPanel>
+</UserControl>
