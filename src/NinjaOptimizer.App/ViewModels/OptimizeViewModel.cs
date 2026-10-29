@@ -169,6 +169,9 @@ public sealed partial class OptimizeViewModel : ObservableObject
     /// <summary>Aba "Inicialização".</summary>
     public StartupViewModel Startup { get; }
 
+    /// <summary>Aba "Apps do Windows".</summary>
+    public DebloatViewModel Debloat { get; }
+
     private string _tab = "tweaks";
     private void SetTab(string tab, bool on)
     {
@@ -177,18 +180,23 @@ public sealed partial class OptimizeViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowTweaks));
         OnPropertyChanged(nameof(ShowCleanup));
         OnPropertyChanged(nameof(ShowStartup));
+        OnPropertyChanged(nameof(ShowDebloat));
+        if (tab == "debloat") _ = Debloat.EnsureLoadedAsync();
         if (tab == "cleanup") _ = Cleanup.EnsureAnalyzedAsync();
         if (tab == "startup") Startup.Refresh();
     }
     public bool ShowTweaks { get => _tab == "tweaks"; set => SetTab("tweaks", value); }
     public bool ShowCleanup { get => _tab == "cleanup"; set => SetTab("cleanup", value); }
     public bool ShowStartup { get => _tab == "startup"; set => SetTab("startup", value); }
+    public bool ShowDebloat { get => _tab == "debloat"; set => SetTab("debloat", value); }
 
     public OptimizeViewModel(OptimizationEngine engine, DialogService dialogs, IElevationService elevation, AppSettings settings, AppLog log,
-        CleanupViewModel cleanup, StartupViewModel startup)
+        CleanupViewModel cleanup, StartupViewModel startup, DebloatViewModel debloat)
     {
         Cleanup = cleanup;
         Startup = startup;
+        Debloat = debloat;
+        debloat.Changed = RefreshStatusAsync;
         _engine = engine;
         _dialogs = dialogs;
         _elevation = elevation;

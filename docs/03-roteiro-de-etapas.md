@@ -277,6 +277,21 @@ Nova ação `NetAdapterPowerAction`: guarda o valor por `InterfaceGuid`; pula pl
 
 **Como testar no Windows:** em Otimizar, itens como "Desativar a indexação de pesquisa" mostram a caixa amarela; itens de risco baixo com consequências mostram "O que muda ▸". Em Limpeza, "Esvaziar a Lixeira" lista "Os arquivos da Lixeira são apagados para sempre" no diálogo.
 
+### ✅ I — Apps do Windows (debloat com escolha)
+
+Nova aba **Otimizar → Apps do Windows**, fora de todos os perfis.
+
+- Lista só os apps instalados da sua conta (`Get-AppxPackage` → JSON), sem frameworks, não-removíveis, pacotes do sistema e a lista **Protegidos** (Store, winget, Segurança do Windows, Shell/Iniciar, `MicrosoftWindows.Client.*`, contas, Terminal, Bloco de Notas, Paint, Captura, Calculadora, extensões de mídia e frameworks). Sem curingas: `SpotifyAB.SpotifyMusic` nunca é pego por `*music*`.
+- Catálogo com 24 entradas (`Debloat/AppCatalog.cs`): nome amigável, selo **Seguro remover / Cuidado / Não recomendado** e consequências. Apps fora do catálogo ficam atrás de "Mostrar outros apps instalados", com aviso genérico. Não recomendado e desconhecido exigem "Entendi as consequências". Nada vem marcado.
+- "Remover selecionados" mostra o resumo com todas as consequências antes. Cada app vira um ajuste `debloat:<nome>` pelo motor (ponto de restauração + histórico). Risco: Seguro = Baixo, Cuidado = Médio, Não recomendado/desconhecido = Alto.
+- Remoção: `Remove-AppxPackage -Package <PackageFullName>` (só sua conta). Opção avançada desmarcada "Remover também para contas novas" (`Remove-AppxProvisionedPackage`, risco alto, administrador).
+- **Desfazer** (no histórico): pacote ainda provisionado → `Add-AppxPackage -Register … -DisableDevelopmentMode`; senão Id da Store → `winget install --source msstore`; senão abre `ms-windows-store://pdp/?PFN=…` e o item fica no histórico para tentar de novo.
+- **OneDrive** à parte: `winget uninstall/install --id Microsoft.OneDrive`.
+- Segurança: nomes de pacote só entram no PowerShell depois de validados contra `^[A-Za-z0-9._-]+$`; Id da Store contra `^[A-Z0-9]{12}$`; caminho do provisionado validado.
+- **Em aberto:** os Ids da Store vieram da análise e não foram conferidos com `winget search --source msstore` (sem Windows aqui). Se algum não bater, o desfazer cai no link da Store.
+
+**Como testar no Windows:** abra a aba, marque "Notícias" e "Clima", clique em Remover selecionados e leia o resumo. Confira que sumiram do Iniciar. No histórico de Ajustes, **Desfazer**: voltam (precisa de internet se não estiverem provisionados).
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

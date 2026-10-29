@@ -147,6 +147,32 @@
             </Border>
         </DataTemplate>
 
+        <!-- ───────── App do Windows (debloat) ───────── -->
+        <DataTemplate x:Key="AppRemoveRow">
+            <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,12">
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center" Margin="16,0,0,0"
+                              IsChecked="{Binding IsSelected, Mode=TwoWay}" IsEnabled="{Binding CanSelect}" AutomationProperties.Name="{Binding Name}"
+                              ToolTip="Marcar para remover" ToolTipService.ShowOnDisabled="True" />
+                    <Border DockPanel.Dock="Right" Style="{StaticResource KindPill}" Tag="{Binding VerdictKind}" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <TextBlock Text="{Binding VerdictText}" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource Label}" Margin="0,2,0,0" Text="{Binding PackageName}" TextTrimming="CharacterEllipsis" />
+                        <ItemsControl ItemsSource="{Binding Consequences}" Margin="0,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate><TextBlock Style="{StaticResource Small}" FontSize="12" TextWrapping="Wrap" Text="{Binding StringFormat='• {0}'}" /></DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Style="{StaticResource Label}" Margin="0,4,0,0" Text="Reversível: reinstala (precisa de internet)" />
+                        <CheckBox IsChecked="{Binding IsAcknowledged}" Margin="0,6,0,0" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource DangerTextBrush}"
+                                  Content="Entendi as consequências" Visibility="{Binding NeedsAcknowledge, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
         <!-- ───────── Programa da inicialização ───────── -->
         <DataTemplate x:Key="StartupRow">
             <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,12">
@@ -307,6 +333,12 @@
                         <TextBlock Text="Inicialização" VerticalAlignment="Center" />
                     </StackPanel>
                 </RadioButton>
+                <RadioButton Style="{StaticResource TabPill}" GroupName="OptimizeTab" IsChecked="{Binding ShowDebloat, Mode=TwoWay}">
+                    <StackPanel Orientation="Horizontal">
+                        <c:Icon Data="{StaticResource Icon.Trash}" Size="18" Margin="0,0,8,0" />
+                        <TextBlock Text="Apps do Windows" VerticalAlignment="Center" />
+                    </StackPanel>
+                </RadioButton>
             </WrapPanel>
             <StackPanel Visibility="{Binding ShowTweaks, Converter={StaticResource BoolToVis}}">
             <ItemsControl ItemsSource="{Binding Filters}" AutomationProperties.Name="Filtrar por categoria">
@@ -370,6 +402,41 @@
             </DockPanel>
         </Border>
 
+        <!-- ───────── Apps do Windows ───────── -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
+                Visibility="{Binding DataContext.ShowDebloat, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" DataContext="{Binding Debloat}">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,14">
+                    <StackPanel>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Height="36" Padding="16,0" Margin="8,0,0,0"
+                                    Content="Remover selecionados" Command="{Binding RemoveSelectedCommand}" />
+                            <Button DockPanel.Dock="Right" Style="{StaticResource SecondarySmall}" Height="36" Padding="12,0" Command="{Binding RefreshCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <c:Icon Data="{StaticResource Icon.Refresh}" Size="16" Margin="0,0,6,0" />
+                                    <TextBlock Text="Atualizar" FontSize="13" />
+                                </StackPanel>
+                            </Button>
+                            <c:Icon Data="{StaticResource Icon.Trash}" Foreground="{StaticResource AccentTextBrush}" Margin="0,0,10,0" />
+                            <TextBlock Style="{StaticResource Body}" FontWeight="SemiBold" Text="{Binding Summary}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        </DockPanel>
+                        <WrapPanel Margin="0,10,0,0">
+                            <CheckBox IsChecked="{Binding ShowUnknown}" Content="Mostrar outros apps instalados" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,24,0" />
+                            <CheckBox IsChecked="{Binding AlsoForNewAccounts}" Foreground="{StaticResource DangerTextBrush}"
+                                      Content="Remover também para contas novas (avançado, risco alto, administrador)"
+                                      ToolTip="Contas criadas depois neste PC não terão o app, e reinstalar pode exigir a Microsoft Store." />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+                <Grid>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource AppRemoveRow}" />
+                    </ScrollViewer>
+                    <Path Style="{StaticResource Spinner}" Width="32" Height="32" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+                </Grid>
+            </DockPanel>
+        </Border>
+
         <!-- ───────── Inicialização ───────── -->
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
                 Visibility="{Binding DataContext.ShowStartup, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" DataContext="{Binding Startup}">
@@ -407,6 +474,9 @@
         <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
                    Visibility="{Binding ShowCleanup, Converter={StaticResource BoolToVis}}"
                    Text="A limpeza não tem como desfazer: cada item diz o que apaga antes de rodar." />
+        <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
+                   Visibility="{Binding ShowDebloat, Converter={StaticResource BoolToVis}}"
+                   Text="Remove só da sua conta (a não ser que você marque a opção avançada). Partes do Windows, a Store, a Segurança do Windows e frameworks nunca aparecem aqui." />
         <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
                    Visibility="{Binding ShowStartup, Converter={StaticResource BoolToVis}}"
                    Text="Desativar não desinstala nem apaga nada: é o mesmo botão do Gerenciador de Tarefas. Ligue de novo quando quiser." />

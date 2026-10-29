@@ -50,6 +50,8 @@ public static class ActionReverter
         [DnsServersAction.KindId] = DnsServersAction.RevertAsync,
         [NetAdapterPowerAction.KindId] = NetAdapterPowerAction.RevertAsync,
         [ProcessPriorityAction.KindId] = ProcessPriorityAction.RevertAsync,
+        [Debloat.AppxRemoveAction.KindId] = Debloat.AppxRemoveAction.RevertAsync,
+        [Debloat.OneDriveRemoveAction.KindId] = Debloat.OneDriveRemoveAction.RevertAsync,
     };
 
     public static Task RevertAsync(SystemContext ctx, ActionSnapshot snapshot, CancellationToken ct)
