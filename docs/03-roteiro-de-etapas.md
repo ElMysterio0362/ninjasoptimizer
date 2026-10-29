@@ -312,6 +312,41 @@ Nova aba **Otimizar → Apps do Windows**, fora de todos os perfis.
 
 **Como testar no Windows (como administrador):** em Otimizar, os itens de risco alto mostram a caixa vermelha e só deixam selecionar depois de "Entendi as consequências". Aplique "Não carregar o hipervisor", rode `bcdedit /enum {current}` (aparece `hypervisorlaunchtype Off`), **Desfazer** e confira que voltou (ou sumiu, se não existia). Num PC com política de empresa, "Integridade de Memória" aparece bloqueada com o motivo.
 
+### ✅ K — Opções avançadas e reparos
+
+**Opções avançadas** (desmarcadas, consequências ao lado; o diálogo de confirmação lista as escolhidas):
+
+| Tarefa | Opção | Observação |
+|---|---|---|
+| `maintenance.repair-network` | Também pedir um novo IP (`ipconfig /release` + `/renew`) | |
+| `maintenance.check-disk` | Verificação completa no próximo boot (`chkdsk /f /r`) | risco alto; responde o S/N do chkdsk com a letra do idioma do Windows (S/Y/O/J) |
+| `maintenance.repair-store` | Re-registrar todos os apps do sistema (todas as contas) | precisa de administrador |
+| `cleanup.recent-items` | Também limpar listas de atalho e fixados (`AutomaticDestinations`/`CustomDestinations`) | |
+| `maintenance.repair-camera`/`-microphone` | Liberar para os apps · para todos os usuários · remover bloqueios de política (risco alto) · procurar drivers (`UsoClient StartScan`) · microfone: incluir a classe `MEDIA` | as liberações viram ajustes no histórico, com Desfazer |
+
+**Novas tarefas:**
+
+| Id | O que faz |
+|---|---|
+| `memory.working-sets` | `NtSetSystemInformation` com `MemoryEmptyWorkingSets` (opção: `MemoryFlushModifiedList`); admin |
+| `maintenance.repair-xbox-apps` | serviços Xbox Desativados → Manual, reinicia os que rodam, re-registra só `GamingApp`, `XboxGamingOverlay`, `XboxIdentityProvider`, `Xbox.TCUI`. Se `gaming.xbox-services-off` está ativo, não mexe por fora: oferece Desfazer o ajuste |
+| `maintenance.repair-camera` | pergunta quais de Teams/Zoom/Discord/Skype/OBS/Câmera fechar (lista com caixas), fecha pedindo e só força se você mandar; reinicia `FrameServer`/`FrameServerMonitor` sem mudar o tipo de início; desliga e liga só `Camera`/`Image`; `pnputil /scan-devices`; re-registra `Microsoft.WindowsCamera`; mostra o estado e abre `ms-settings:privacy-webcam` |
+| `maintenance.repair-microphone` | o mesmo com `Audiosrv`/`AudioEndpointBuilder` na ordem certa e a classe `AudioEndpoint`; abre `ms-settings:sound` |
+| `maintenance.force-shutdown` | `shutdown /s /f /t 0` |
+
+**Novos ajustes** (fora dos perfis, usados pelas opções dos reparos e também visíveis em Otimizar): `privacy.camera-allow-apps`, `privacy.camera-allow-apps-all-users`, `privacy.camera-remove-policy` (alto), `privacy.microphone-allow-apps`, `privacy.microphone-allow-apps-all-users`, `privacy.microphone-remove-policy` (alto). Nova ação `RegistryDeleteValueAction` (mesmo snapshot do `RegistryValueAction`, então o Desfazer devolve a política exatamente).
+
+**Reiniciar agora:** depois de aplicar ajustes que pedem reinício (ou uma manutenção que pede), o app oferece "Reiniciar agora" (`shutdown /r /t 0`) pedindo para salvar o trabalho.
+
+Infra: `MaintenanceTask.Options`/`SelectedOptions`, `IMaintenanceUi` (perguntas no meio da execução, com lista de caixas de seleção), `IAppCloser`.
+
+**Como testar no Windows (como administrador):**
+1. Com o Discord aberto, rode **Reparar a câmera**: ele pergunta se fecha o Discord; a webcam pisca no Gerenciador de Dispositivos e as configurações de privacidade abrem.
+2. Marque "Liberar a câmera para os apps" e rode de novo: aparece no histórico de Otimizar com **Desfazer**.
+3. **Reparar o microfone**: o som cai por alguns segundos e volta.
+4. Aplique "Desativar os serviços Xbox" e rode **Reparar os apps Xbox**: ele oferece desfazer o ajuste em vez de mexer por fora.
+5. Em Verificar erros no disco, marque a verificação completa: o chkdsk agenda para o próximo boot (não reinicie se não puder deixar o PC parado).
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

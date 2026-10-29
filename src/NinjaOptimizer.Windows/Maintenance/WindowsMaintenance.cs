@@ -14,8 +14,12 @@ public static class WindowsMaintenanceCatalog
     private static string Windows => Environment.GetFolderPath(Environment.SpecialFolder.Windows);
     private static string LocalLow => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "LocalLow");
 
+    /// <param name="applyTweak">Aplica um ajuste do catálogo pelo motor (com histórico); devolve o resumo.</param>
+    /// <param name="revertTweak">Desfaz o ajuste ativo com esse Id pelo motor.</param>
     public static IReadOnlyList<MaintenanceTask> Build(ICommandRunner commands, IServiceManager services, IElevationService elevation,
-        NinjaOptimizer.Core.Safety.ChangeJournal journal, IAppPaths paths) =>
+        NinjaOptimizer.Core.Safety.ChangeJournal journal, IAppPaths paths,
+        Func<string, CancellationToken, Task<string>>? applyTweak = null,
+        Func<string, CancellationToken, Task<MaintenanceResult>>? revertTweak = null) =>
     [
         new FolderCleanupTask("cleanup.temp", "Apagar arquivos temporários",
             "Apaga arquivos temporários do seu usuário e do Windows com mais de 1 dia. Arquivos em uso são pulados.",
@@ -53,11 +57,32 @@ public static class WindowsMaintenanceCatalog
         new RecentItemsTask(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "Windows", "Recent")),
         new RepairWindowsUpdateTask(services, Path.Combine(Windows, "SoftwareDistribution"), Path.Combine(Environment.SystemDirectory, "catroot2")),
         new RepairNetworkTask(commands, paths.LogFolder, () => JournalQueries.ActiveTweakIds(journal)),
-        new CheckDiskTask(commands, SystemDrive, () => new DriveInfo(SystemDrive).DriveFormat),
+        new CheckDiskTask(commands, SystemDrive, () => new DriveInfo(SystemDrive).DriveFormat, YesLetter),
         new RestartAudioTask(services),
         new RestoreDefaultServicesTask(services, () => JournalQueries.ServicesChangedByApp(journal)),
         new RepairStoreTask(commands, services, elevation, () => JournalQueries.ServicesChangedByApp(journal)),
+
+        // Catálogo extra K
+        new WorkingSetsTask(),
+        new RepairXboxAppsTask(commands, services,
+            () => JournalQueries.ActiveTweakIds(journal).Contains("gaming.xbox-services-off"),
+            ct => revertTweak?.Invoke("gaming.xbox-services-off", ct) ?? Task.FromResult(new MaintenanceResult(false, 0, "Use Desfazer no histórico de Otimizar."))),
+        new DeviceRepairTask(DeviceRepairKind.Camera, commands, services, new ProcessAppCloser(), ApplyOrExplain(applyTweak)),
+        new DeviceRepairTask(DeviceRepairKind.Microphone, commands, services, new ProcessAppCloser(), ApplyOrExplain(applyTweak)),
+        new ForceShutdownTask(commands),
     ];
+
+    private static Func<string, CancellationToken, Task<string>> ApplyOrExplain(Func<string, CancellationToken, Task<string>>? apply) =>
+        apply ?? ((_, _) => Task.FromResult("Opção não disponível."));
+
+    /// <summary>Letra de "Sim" que o chkdsk espera, no idioma do Windows.</summary>
+    private static char YesLetter => System.Globalization.CultureInfo.InstalledUICulture.TwoLetterISOLanguageName switch
+    {
+        "pt" or "es" or "it" => 'S',
+        "fr" => 'O',
+        "de" or "nl" => 'J',
+        _ => 'Y',
+    };
 
     private static string SystemDrive => (Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\")[..2];
 
@@ -216,11 +241,11 @@ internal sealed class StandbyListTask : MaintenanceTask
     public override bool RequiresAdmin => true;
     public override string ActionText => "Liberar agora";
 
-    private const int SystemMemoryListInformation = 80, MemoryPurgeStandbyList = 4;
+    internal const int SystemMemoryListInformation = 80, MemoryPurgeStandbyList = 4, MemoryEmptyWorkingSets = 2, MemoryFlushModifiedList = 3;
     private const uint SePrivilegeEnabled = 0x2, TokenAdjustPrivileges = 0x20, TokenQuery = 0x8;
 
     [DllImport("ntdll.dll")]
-    private static extern int NtSetSystemInformation(int infoClass, ref int info, int length);
+    internal static extern int NtSetSystemInformation(int infoClass, ref int info, int length);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct LUID { public uint Low; public int High; }
@@ -240,7 +265,7 @@ internal sealed class StandbyListTask : MaintenanceTask
     [DllImport("kernel32.dll")]
     private static extern bool CloseHandle(IntPtr handle);
 
-    private static void EnablePrivilege(string name)
+    internal static void EnablePrivilege(string name)
     {
         if (!OpenProcessToken(Process.GetCurrentProcess().Handle, TokenAdjustPrivileges | TokenQuery, out var token))
             throw new Win32Exception();
@@ -257,7 +282,7 @@ internal sealed class StandbyListTask : MaintenanceTask
         }
     }
 
-    private static long StandbyBytes()
+    internal static long StandbyBytes()
     {
         long total = 0;
         foreach (var counter in new[] { "Standby Cache Core Bytes", "Standby Cache Normal Priority Bytes", "Standby Cache Reserve Bytes" })
@@ -354,5 +379,92 @@ internal sealed class RestartExplorerTask(IElevationService elevation) : Mainten
             ? new ProcessStartInfo("runas.exe", "/trustlevel:0x20000 explorer.exe") { UseShellExecute = false, CreateNoWindow = true }
             : new ProcessStartInfo("explorer.exe") { UseShellExecute = true };
         try { Process.Start(psi)?.Dispose(); } catch (Win32Exception) { }
+    }
+}
+
+/// <summary>K2: tira da RAM as páginas dos programas (working sets) e, opcionalmente, grava a lista modificada.</summary>
+internal sealed class WorkingSetsTask : MaintenanceTask
+{
+    private const string FlushModified = "flush-modified";
+
+    public override string Id => "memory.working-sets";
+    public override string Name => "Liberar a memória dos programas";
+    public override string Description => "Pede a todos os programas abertos que devolvam a RAM que não estão usando agora. O uso de RAM cai na hora.";
+    public override TweakCategory Category => TweakCategory.Memory;
+    public override bool RequiresAdmin => true;
+    public override string ActionText => "Liberar agora";
+    public override IReadOnlyList<string> Consequences =>
+    [
+        "O uso de RAM cai na hora, mas os programas abertos ficam lentos por alguns segundos enquanto recarregam o que precisam do disco.",
+        "Durante um jogo pode causar engasgos: não use com o jogo aberto.",
+    ];
+    public override IReadOnlyList<MaintenanceOption> Options =>
+        [new(FlushModified, "Também gravar no disco a memória modificada", ["Pode deixar o disco ocupado por alguns segundos."])];
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MEMORYSTATUSEX
+    {
+        public uint Length, MemoryLoad;
+        public ulong TotalPhys, AvailPhys, TotalPageFile, AvailPageFile, TotalVirtual, AvailVirtual, AvailExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX status);
+
+    private static ulong AvailableRam()
+    {
+        var m = new MEMORYSTATUSEX { Length = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
+        return GlobalMemoryStatusEx(ref m) ? m.AvailPhys : 0;
+    }
+
+    public override Task<MaintenanceResult> RunAsync(IProgress<string>? progress, CancellationToken ct) => Task.Run(() =>
+    {
+        StandbyListTask.EnablePrivilege("SeProfileSingleProcessPrivilege");
+        var before = AvailableRam();
+        var command = StandbyListTask.MemoryEmptyWorkingSets;
+        var status = StandbyListTask.NtSetSystemInformation(StandbyListTask.SystemMemoryListInformation, ref command, sizeof(int));
+        if (status != 0) return new MaintenanceResult(false, 0, $"O Windows recusou a liberação (status 0x{status:X8}).");
+        if (IsSelected(FlushModified))
+        {
+            command = StandbyListTask.MemoryFlushModifiedList;
+            StandbyListTask.NtSetSystemInformation(StandbyListTask.SystemMemoryListInformation, ref command, sizeof(int));
+        }
+        var after = AvailableRam();
+        return new MaintenanceResult(true, (long)Math.Max(0, (double)after - before), "Memória dos programas liberada.");
+    }, ct);
+}
+
+/// <summary>Fecha programas pedindo primeiro (como o X da janela); só força se o usuário mandar.</summary>
+internal sealed class ProcessAppCloser : IAppCloser
+{
+    public IReadOnlyList<(int Pid, string Name)> Running(IEnumerable<string> processNames)
+    {
+        var session = Process.GetCurrentProcess().SessionId;
+        var list = new List<(int, string)>();
+        foreach (var n in processNames)
+            foreach (var p in Process.GetProcessesByName(n))
+                using (p) { if (p.SessionId == session) list.Add((p.Id, p.ProcessName)); }
+        return list;
+    }
+
+    public bool CloseGracefully(int pid, TimeSpan wait)
+    {
+        try
+        {
+            using var p = Process.GetProcessById(pid);
+            if (p.MainWindowHandle == IntPtr.Zero) return p.HasExited;
+            p.CloseMainWindow();
+            return p.WaitForExit(wait);
+        }
+        catch (ArgumentException) { return true; } // já fechou
+        catch (InvalidOperationException) { return true; }
+    }
+
+    public void Kill(int pid)
+    {
+        try { using var p = Process.GetProcessById(pid); p.Kill(); }
+        catch (ArgumentException) { }
+        catch (InvalidOperationException) { }
+        catch (Win32Exception) { }
     }
 }

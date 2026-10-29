@@ -104,9 +104,23 @@ public sealed class RecentItemsTask(string recentFolder) : MaintenanceTask
     public override TweakCategory Category => TweakCategory.SystemPrivacy;
     public override string Note => "Os arquivos recentes somem do Acesso Rápido e do menu Iniciar. Seus arquivos não são apagados, e as pastas fixadas continuam.";
 
-    private IEnumerable<FileInfo> Shortcuts() => Directory.Exists(recentFolder)
-        ? new DirectoryInfo(recentFolder).EnumerateFiles("*.lnk", SearchOption.TopDirectoryOnly)
-        : [];
+    public const string JumpLists = "jumplists";
+    public override IReadOnlyList<MaintenanceOption> Options =>
+    [
+        new(JumpLists, "Também limpar listas de atalho e fixados",
+            ["As pastas fixadas no Acesso Rápido e os itens fixados nas listas dos programas são apagados."]),
+    ];
+
+    private IEnumerable<FileInfo> Shortcuts()
+    {
+        if (!Directory.Exists(recentFolder)) return [];
+        var files = new DirectoryInfo(recentFolder).EnumerateFiles("*.lnk", SearchOption.TopDirectoryOnly);
+        if (!IsSelected(JumpLists)) return files;
+        var lists = new[] { "AutomaticDestinations", "CustomDestinations" }
+            .Select(d => Path.Combine(recentFolder, d)).Where(Directory.Exists)
+            .SelectMany(d => new DirectoryInfo(d).EnumerateFiles("*", SearchOption.TopDirectoryOnly));
+        return files.Concat(lists);
+    }
 
     public override Task<long?> EstimateAsync(CancellationToken ct) => Task.FromResult<long?>(Shortcuts().Sum(f => f.Length));
 
@@ -175,6 +189,9 @@ public sealed class RepairWindowsUpdateTask(IServiceManager services, string sof
 /// <summary>F5: winsock reset, ip reset e flush de DNS, salvando antes a configuração atual no log.</summary>
 public sealed class RepairNetworkTask(ICommandRunner commands, string logFolder, Func<IReadOnlySet<string>> activeTweakIds) : MaintenanceTask
 {
+    public const string Renew = "renew";
+    public override IReadOnlyList<MaintenanceOption> Options =>
+        [new(Renew, "Também pedir um novo IP ao roteador", ["A internet cai por alguns segundos. Não melhora o ping; só ajuda se houver conflito de IP."])];
     public override IReadOnlyList<string> Consequences => ["Apaga IP fixo e DNS configurados à mão.", "Pode remover filtros antigos de VPN ou antivírus.", "Precisa reiniciar o PC para a internet voltar ao normal."];
     public override string Id => "maintenance.repair-network";
     public override string Name => "Reparar a rede";
@@ -204,12 +221,13 @@ public sealed class RepairNetworkTask(ICommandRunner commands, string logFolder,
         await File.WriteAllTextAsync(Path.Combine(logFolder, $"rede-antes-do-reparo-{stamp}.txt"), before.StdOut, ct);
 
         progress?.Report("Reparando a rede…");
-        var steps = new (string File, string Args)[]
+        var steps = new List<(string File, string Args)>
         {
             ("netsh", "winsock reset"),
             ("netsh", $"int ip reset \"{Path.Combine(logFolder, "netsh-ip-reset.log")}\""),
             ("ipconfig", "/flushdns"),
         };
+        if (IsSelected(Renew)) steps.AddRange([("ipconfig", "/release"), ("ipconfig", "/renew")]);
         var errors = new List<string>();
         foreach (var (file, args) in steps)
         {
@@ -223,9 +241,18 @@ public sealed class RepairNetworkTask(ICommandRunner commands, string logFolder,
 }
 
 /// <summary>F6: chkdsk /scan (online). Com erro que precisa de correção offline, oferece /spotfix.</summary>
-public sealed class CheckDiskTask(ICommandRunner commands, string drive, Func<string?> fileSystem) : MaintenanceTask
+public sealed class CheckDiskTask(ICommandRunner commands, string drive, Func<string?> fileSystem, char yesLetter = 'Y') : MaintenanceTask
 {
+    public const string FullAtBoot = "full-at-boot";
+    public override IReadOnlyList<MaintenanceOption> Options =>
+    [
+        new(FullAtBoot, "Verificação completa no próximo boot (chkdsk /f /r)",
+            ["O PC fica inutilizável durante a verificação, que pode levar horas num HD grande. Não desligue no meio."], HighRisk: true),
+    ];
+    // O chkdsk pergunta "agendar no próximo boot? (S/N)" com a letra traduzida.
+    private readonly char _yes = char.IsAsciiLetter(yesLetter) ? char.ToUpperInvariant(yesLetter) : throw new ArgumentException("Letra inválida.", nameof(yesLetter));
     public override bool HasSideEffects => false;
+    public override IReadOnlyList<string> Consequences => IsSelected(FullAtBoot) ? Options[0].Consequences : [];
     // Só "C:" e afins entram nos comandos.
     private readonly string drive = drive is [var l, ':'] && char.IsAsciiLetter(l) ? drive.ToUpperInvariant()
         : throw new ArgumentException("Unidade inválida.", nameof(drive));
@@ -242,6 +269,13 @@ public sealed class CheckDiskTask(ICommandRunner commands, string drive, Func<st
     {
         if (!string.Equals(fileSystem(), "NTFS", StringComparison.OrdinalIgnoreCase))
             return new MaintenanceResult(false, 0, $"A verificação online só funciona em NTFS, e {drive} não é NTFS.");
+        if (IsSelected(FullAtBoot))
+        {
+            var full = await commands.RunAsync("cmd.exe", $"/c echo {_yes}| chkdsk.exe {drive} /f /r", ct);
+            return full.ExitCode is 0 or 3
+                ? new MaintenanceResult(true, 0, $"Verificação completa de {drive} agendada para o próximo boot. Reinicie quando puder deixar o PC parado.") { RequiresRestart = true }
+                : new MaintenanceResult(false, 0, $"Não deu para agendar a verificação completa (código {full.ExitCode}).");
+        }
         progress?.Report($"Verificando {drive}…");
         var r = await commands.RunAsync("chkdsk.exe", $"{drive} /scan", ct);
         return r.ExitCode switch
@@ -329,6 +363,13 @@ public sealed class RepairStoreTask(ICommandRunner commands, IServiceManager ser
         "-NoProfile -NonInteractive -Command \"foreach ($n in 'Microsoft.WindowsStore','Microsoft.DesktopAppInstaller') { " +
         "Get-AppxPackage $n | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register \\\"$($_.InstallLocation)\\AppXManifest.xml\\\" } }\"";
 
+    public const string AllApps = "all-apps";
+    internal const string ReregisterAll =
+        "-NoProfile -NonInteractive -Command \"Get-AppxPackage -AllUsers | ForEach-Object { " +
+        "Add-AppxPackage -DisableDevelopmentMode -Register \\\"$($_.InstallLocation)\\AppXManifest.xml\\\" -ErrorAction SilentlyContinue }\"";
+    public override IReadOnlyList<MaintenanceOption> Options =>
+        [new(AllApps, "Re-registrar todos os apps do sistema (todas as contas)", ["Pode levar vários minutos e mostrar muitos erros, que são normais."], RequiresAdmin: true)];
+
     public override string Id => "maintenance.repair-store";
     public override string Name => "Reparar a Microsoft Store";
     public override string Description => "Limpa o cache da Store (wsreset) e registra de novo a Store e o Instalador de Aplicativos. Resolve downloads travados e a Store que não abre.";
@@ -351,6 +392,12 @@ public sealed class RepairStoreTask(ICommandRunner commands, IServiceManager ser
         var reset = await commands.RunAsync("wsreset.exe", "", ct);
         progress?.Report("Registrando a Store de novo…");
         var reg = await commands.RunAsync("powershell", Reregister, ct);
+        if (IsSelected(AllApps))
+        {
+            progress?.Report("Registrando todos os apps de novo…");
+            if (elevation.IsElevated) await commands.RunAsync("powershell", ReregisterAll, ct); // erros de pacotes individuais são normais
+            else notes.Add("re-registrar todos os apps precisa de administrador");
+        }
         var ok = reset.Success && reg.Success;
         var msg = ok ? "Store reparada." : $"Parte do reparo falhou (wsreset {reset.ExitCode}, registro {reg.ExitCode}).";
         if (notes.Count > 0) msg += " " + string.Join("; ", notes) + ".";

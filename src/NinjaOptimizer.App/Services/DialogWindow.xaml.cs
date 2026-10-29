@@ -45,6 +45,23 @@ public partial class DialogWindow : Window
         MouseLeftButtonDown += (_, _) => DragMove();
     }
 
+    private List<System.Windows.Controls.CheckBox>? _choices;
+
+    /// <summary>Troca a lista de detalhes por caixas de seleção (todas marcadas).</summary>
+    public void UseChoices(IReadOnlyList<string> items)
+    {
+        _choices = items.Select(i => new System.Windows.Controls.CheckBox
+        {
+            Content = i, IsChecked = true, Margin = new Thickness(0, 4, 0, 4),
+            Foreground = (Brush)FindResource("TextBrush"),
+        }).ToList();
+        DetailsList.ItemTemplate = null;
+        DetailsList.ItemsSource = _choices;
+        DetailsBox.Visibility = Visibility.Visible;
+    }
+
+    public IReadOnlyList<string> Chosen => _choices?.Where(c => c.IsChecked == true).Select(c => (string)c.Content).ToList() ?? [];
+
     private void OnConfirm(object sender, RoutedEventArgs e) => DialogResult = true;
     private void OnCancel(object sender, RoutedEventArgs e) => DialogResult = false;
 }
@@ -57,6 +74,22 @@ public sealed class DialogService
 
     public void Info(string title, string message, IReadOnlyList<string>? details = null, DialogKind kind = DialogKind.Info) =>
         Show(title, message, details, kind, "Fechar", null);
+
+    /// <summary>Caixas de seleção (todas marcadas). null = cancelado.</summary>
+    public IReadOnlyList<string>? Choose(string title, string message, IReadOnlyList<string> items, string confirmText)
+    {
+        var app = Application.Current;
+        if (app is null) return null;
+        return app.Dispatcher.Invoke(() =>
+        {
+            var owner = app.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? app.MainWindow;
+            var dlg = new DialogWindow(title, message, null, DialogKind.Danger, confirmText, "Cancelar");
+            dlg.UseChoices(items);
+            if (owner is not null && owner.IsVisible) dlg.Owner = owner;
+            else dlg.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            return dlg.ShowDialog() == true ? dlg.Chosen : null;
+        });
+    }
 
     private static bool Show(string title, string message, IReadOnlyList<string>? details, DialogKind kind, string confirm, string? cancel)
     {
@@ -71,4 +104,14 @@ public sealed class DialogService
             return dlg.ShowDialog() == true;
         });
     }
+}
+
+/// <summary>Perguntas das tarefas de manutenção no meio da execução, pelas janelas do app.</summary>
+public sealed class MaintenanceUi(DialogService dialogs) : NinjaOptimizer.Core.Maintenance.IMaintenanceUi
+{
+    public Task<IReadOnlyList<string>?> ChooseAsync(string title, string message, IReadOnlyList<string> items, string confirmText) =>
+        Task.FromResult(dialogs.Choose(title, message, items, confirmText));
+
+    public Task<bool> ConfirmAsync(string title, string message, IReadOnlyList<string> details, string confirmText) =>
+        Task.FromResult(dialogs.Confirm(title, message, details, DialogKind.Danger, confirmText));
 }

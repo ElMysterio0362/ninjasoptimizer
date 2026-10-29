@@ -44,6 +44,9 @@ public sealed class CatalogTests : IDisposable
         var tweak = TweakCatalog.Get(id);
         var (engine, reg, svc, power) = NewEngine(tweak);
         var bcdBefore = new Dictionary<string, string>(power.Bcd);
+        // Ajustes que apagam um valor (bloqueios de política) precisam que ele exista antes.
+        foreach (var d in tweak.Actions.OfType<RegistryDeleteValueAction>()) reg.SetValue(d.Hive, d.Key, d.Name, RegValue.Dword(0));
+        var regBefore = reg.Values.ToDictionary(kv => kv.Key, kv => kv.Value.Serialize());
         var activeBefore = power.Active;
         var settingsBefore = new Dictionary<string, uint>(power.Settings);
 
@@ -55,7 +58,7 @@ public sealed class CatalogTests : IDisposable
         Assert.All(revert, r => Assert.True(r.Success, r.Message));
         // O powercfg grava HibernateEnabled ao religar a hibernação (o estado é conferido abaixo)
         reg.Values.Remove(@"LocalMachine\SYSTEM\CurrentControlSet\Control\Power\HibernateEnabled");
-        Assert.Empty(reg.Values);
+        Assert.Equal(regBefore, reg.Values.ToDictionary(kv => kv.Key, kv => kv.Value.Serialize()));
         Assert.All(ServiceNames, n => Assert.Equal(ServiceStartMode.Automatic, svc.Services[n].Mode));
         Assert.Equal(activeBefore, power.Active);
         Assert.All(power.Settings, kv => Assert.Equal(settingsBefore.GetValueOrDefault(kv.Key, 50u), kv.Value));

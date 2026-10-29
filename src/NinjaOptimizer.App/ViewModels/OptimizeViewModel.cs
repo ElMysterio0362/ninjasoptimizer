@@ -197,6 +197,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
         Startup = startup;
         Debloat = debloat;
         debloat.Changed = RefreshStatusAsync;
+        cleanup.OfferRestart = OfferRestart;
         _engine = engine;
         _dialogs = dialogs;
         _elevation = elevation;
@@ -447,6 +448,17 @@ public sealed partial class OptimizeViewModel : ObservableObject
         var message = "Você pode reverter cada um no histórico de alterações.";
         if (report.RequiresRestart) message = "Alguns ajustes valem depois de sair e entrar de novo na sua conta (ou reiniciar o PC). " + message;
         _dialogs.Info(title, message, lines, report.FailedCount > 0 ? DialogKind.Danger : DialogKind.Success);
+        if (report.RequiresRestart) OfferRestart();
+    }
+
+    /// <summary>"Reiniciar agora", pedindo para salvar o trabalho antes.</summary>
+    public void OfferRestart()
+    {
+        if (!_dialogs.Confirm("Reiniciar agora?", "Alguns ajustes só valem depois de reiniciar. Salve o que estiver aberto antes: os programas serão fechados.",
+                confirmText: "Reiniciar agora", cancelText: "Depois"))
+            return;
+        _log.Info("Reiniciando o PC a pedido do usuário");
+        _ = NinjaOptimizer.Core.Maintenance.Restart.NowAsync(_engine.Context.Commands);
     }
 
     [RelayCommand]

@@ -11,6 +11,17 @@ public sealed record MaintenanceResult(bool Success, long BytesFreed, string Mes
     public bool RequiresRestart { get; init; }
 }
 
+/// <summary>Opção avançada de uma tarefa: vem desmarcada e mostra as consequências ao lado.</summary>
+public sealed record MaintenanceOption(string Id, string Title, IReadOnlyList<string> Consequences, bool HighRisk = false, bool RequiresAdmin = false);
+
+/// <summary>Perguntas que uma tarefa pode fazer no meio da execução (ex.: quais programas fechar).</summary>
+public interface IMaintenanceUi
+{
+    /// <summary>Lista com caixas de seleção (todas marcadas). null = cancelado.</summary>
+    Task<IReadOnlyList<string>?> ChooseAsync(string title, string message, IReadOnlyList<string> items, string confirmText);
+    Task<bool> ConfirmAsync(string title, string message, IReadOnlyList<string> details, string confirmText);
+}
+
 public sealed record MaintenanceFollowUp(string Title, string Message, string ConfirmText, Func<CancellationToken, Task<MaintenanceResult>> Run);
 
 /// <summary>
@@ -35,6 +46,17 @@ public abstract class MaintenanceTask
 
     /// <summary>false só para tarefas que não apagam nada e não reiniciam nada (ex.: só verificam).</summary>
     public virtual bool HasSideEffects => true;
+
+    /// <summary>Opções avançadas (todas desmarcadas por padrão).</summary>
+    public virtual IReadOnlyList<MaintenanceOption> Options => [];
+
+    /// <summary>Ids das opções marcadas pelo usuário para a próxima execução.</summary>
+    public HashSet<string> SelectedOptions { get; } = [];
+
+    public bool IsSelected(string optionId) => SelectedOptions.Contains(optionId);
+
+    /// <summary>Para perguntas no meio da execução. Sem interface (testes), as perguntas respondem "não".</summary>
+    public IMaintenanceUi? Ui { get; set; }
     public virtual bool RequiresAdmin => false;
     /// <summary>Texto curto de duração esperada ("segundos", "alguns minutos").</summary>
     public virtual string Duration => "segundos";

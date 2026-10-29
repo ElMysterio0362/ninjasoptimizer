@@ -1010,5 +1010,123 @@ public static class TweakCatalog
             ],
             Actions = [LmDword(@"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate", "DoNotConnectToWindowsUpdateInternetLocations", 1)],
         },
+
+        // ═════════════ Catálogo extra K · Permissões de câmera e microfone (usadas pelos reparos) ═════════════
+        new Tweak
+        {
+            Id = "privacy.camera-allow-apps",
+            Name = "Liberar a câmera para os apps (sua conta)",
+            Description = "Marca \"Permitir que os apps acessem a câmera\" nas configurações de privacidade, para apps da Store e programas comuns.",
+            Benefit = "Resolve câmera bloqueado pela privacidade do Windows em apps como Discord, Teams e navegador.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            ManualOnly = true,
+            Profiles = P(),
+            Consequences = ["Todos os apps passam a poder usar sua câmera: revise em Configurações → Privacidade."],
+            Actions =
+            [
+                new RegistryValueAction(RegHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam", "Value", RegValue.Str("Allow")),
+                new RegistryValueAction(RegHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\NonPackaged", "Value", RegValue.Str("Allow")),
+            ],
+        },
+        new Tweak
+        {
+            Id = "privacy.camera-allow-apps-all-users",
+            Name = "Liberar a câmera para os apps (todos os usuários)",
+            Description = "Libera o acesso aa câmera na configuração do PC inteiro, que vale para todas as contas.",
+            Benefit = "Resolve câmera bloqueado para todas as contas deste PC.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            ManualOnly = true,
+            Profiles = P(),
+            Consequences = ["Os apps de todas as contas deste PC passam a poder usar a câmera."],
+            Actions =
+            [
+                new RegistryValueAction(RegHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam", "Value", RegValue.Str("Allow")),
+                new RegistryValueAction(RegHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\NonPackaged", "Value", RegValue.Str("Allow")),
+            ],
+        },
+        new Tweak
+        {
+            Id = "privacy.camera-remove-policy",
+            Name = "Remover bloqueios de política da câmera",
+            Description = "Apaga as políticas que bloqueiam a câmera (normalmente colocadas por empresa, escola ou programas de \"privacidade\"). Os valores ficam guardados para o Desfazer.",
+            Benefit = "Resolve câmera bloqueado por política, quando o Windows mostra \"gerenciado pela sua organização\".",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.High,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences =
+            [
+                "Em PC de empresa ou escola, isso desfaz uma regra do administrador, e ela pode voltar na próxima sincronização.",
+                "Pode violar a política de uso do PC da empresa ou escola.",
+            ],
+            Actions =
+            [
+                new RegistryDeleteValueAction(RegHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Camera", "AllowCamera"),
+                new RegistryDeleteValueAction(RegHive.CurrentUser, @"Software\Policies\Microsoft\Camera", "AllowCamera"),
+                new RegistryDeleteValueAction(RegHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\AppPrivacy", "LetAppsAccessCamera"),
+                new RegistryDeleteValueAction(RegHive.CurrentUser, @"Software\Policies\Microsoft\Windows\AppPrivacy", "LetAppsAccessCamera"),
+            ],
+        },
+        new Tweak
+        {
+            Id = "privacy.microphone-allow-apps",
+            Name = "Liberar o microfone para os apps (sua conta)",
+            Description = "Marca \"Permitir que os apps acessem o microfone\" nas configurações de privacidade, para apps da Store e programas comuns.",
+            Benefit = "Resolve microfone bloqueado pela privacidade do Windows em apps como Discord, Teams e navegador.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            ManualOnly = true,
+            Profiles = P(),
+            Consequences = ["Todos os apps passam a poder usar seu microfone: revise em Configurações → Privacidade."],
+            Actions =
+            [
+                new RegistryValueAction(RegHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone", "Value", RegValue.Str("Allow")),
+                new RegistryValueAction(RegHive.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\NonPackaged", "Value", RegValue.Str("Allow")),
+            ],
+        },
+        new Tweak
+        {
+            Id = "privacy.microphone-allow-apps-all-users",
+            Name = "Liberar o microfone para os apps (todos os usuários)",
+            Description = "Libera o acesso ao microfone na configuração do PC inteiro, que vale para todas as contas.",
+            Benefit = "Resolve microfone bloqueado para todas as contas deste PC.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            ManualOnly = true,
+            Profiles = P(),
+            Consequences = ["Os apps de todas as contas deste PC passam a poder usar o microfone."],
+            Actions =
+            [
+                new RegistryValueAction(RegHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone", "Value", RegValue.Str("Allow")),
+                new RegistryValueAction(RegHive.LocalMachine, @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\NonPackaged", "Value", RegValue.Str("Allow")),
+            ],
+        },
+        new Tweak
+        {
+            Id = "privacy.microphone-remove-policy",
+            Name = "Remover bloqueios de política do microfone",
+            Description = "Apaga as políticas que bloqueiam o microfone (normalmente colocadas por empresa, escola ou programas de \"privacidade\"). Os valores ficam guardados para o Desfazer.",
+            Benefit = "Resolve microfone bloqueado por política, quando o Windows mostra \"gerenciado pela sua organização\".",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.High,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences =
+            [
+                "Em PC de empresa ou escola, isso desfaz uma regra do administrador, e ela pode voltar na próxima sincronização.",
+                "Pode violar a política de uso do PC da empresa ou escola.",
+            ],
+            Actions =
+            [
+                new RegistryDeleteValueAction(RegHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\AppPrivacy", "LetAppsAccessMicrophone"),
+                new RegistryDeleteValueAction(RegHive.CurrentUser, @"Software\Policies\Microsoft\Windows\AppPrivacy", "LetAppsAccessMicrophone"),
+            ],
+        },
     ];
 }

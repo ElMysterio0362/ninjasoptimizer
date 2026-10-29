@@ -58,6 +58,38 @@ public partial class App : Application
             _services.GetRequiredService<DashboardViewModel>().LoadAsync());
     }
 
+    /// <summary>Usado pelas opções dos reparos: aplica um ajuste do catálogo pelo motor (fica no histórico com Desfazer).</summary>
+    private static async Task<string> ApplyCatalogTweakAsync(IServiceProvider sp, string id, CancellationToken ct)
+    {
+        var engine = sp.GetRequiredService<OptimizationEngine>();
+        var settings = sp.GetRequiredService<AppSettings>();
+        var tweak = TweakCatalog.Get(id);
+        var report = await engine.ApplyAsync([tweak], new ApplyOptions
+        {
+            CreateRestorePoint = settings.CreateRestorePoint,
+            AbortIfRestorePointFails = settings.AbortIfRestorePointFails,
+            ConfirmHighRisk = _ => Task.FromResult(true), // a opção de risco alto já foi confirmada no diálogo da tarefa
+        }, ct);
+        await Current.Dispatcher.InvokeAsync(() => sp.GetRequiredService<OptimizeViewModel>().RefreshStatusAsync()).Task.Unwrap();
+        var r = report.Results.SingleOrDefault();
+        return r?.Outcome switch
+        {
+            TweakOutcome.Applied => $"\"{tweak.Name}\" aplicado (pode desfazer no histórico).",
+            TweakOutcome.AlreadyApplied => $"\"{tweak.Name}\" já estava assim.",
+            _ => $"\"{tweak.Name}\" não foi aplicado: {report.AbortReason ?? r?.Message}",
+        };
+    }
+
+    private static async Task<MaintenanceResult> RevertCatalogTweakAsync(IServiceProvider sp, string id, CancellationToken ct)
+    {
+        var engine = sp.GetRequiredService<OptimizationEngine>();
+        var entry = engine.Journal.ActiveEntries.LastOrDefault(e => e.TweakId == id);
+        if (entry is null) return new MaintenanceResult(true, 0, "O ajuste já não estava ativo.");
+        var r = await engine.RevertAsync(entry.Id, ct);
+        await Current.Dispatcher.InvokeAsync(() => sp.GetRequiredService<OptimizeViewModel>().RefreshStatusAsync()).Task.Unwrap();
+        return new MaintenanceResult(r.Success, 0, r.Success ? "Ajuste desfeito. Rode o reparo de novo se ainda precisar." : r.Message);
+    }
+
     private static async Task LoadSystemProfileAsync(OptimizeViewModel optimize, AppLog log)
     {
         try
@@ -115,7 +147,9 @@ public partial class App : Application
         s.AddSingleton(sp => new MaintenanceStore(Path.Combine(sp.GetRequiredService<IAppPaths>().DataFolder, "maintenance.json")));
         s.AddSingleton<IReadOnlyList<MaintenanceTask>>(sp => WindowsMaintenanceCatalog.Build(
             sp.GetRequiredService<ICommandRunner>(), sp.GetRequiredService<IServiceManager>(), sp.GetRequiredService<IElevationService>(),
-            sp.GetRequiredService<ChangeJournal>(), sp.GetRequiredService<IAppPaths>()));
+            sp.GetRequiredService<ChangeJournal>(), sp.GetRequiredService<IAppPaths>(),
+            applyTweak: (id, ct) => ApplyCatalogTweakAsync(sp, id, ct),
+            revertTweak: (id, ct) => RevertCatalogTweakAsync(sp, id, ct)));
         s.AddSingleton<CleanupViewModel>();
         s.AddSingleton(sp => new StartupManager(sp.GetRequiredService<IRegistryAccess>(), StartupFolders.Files));
         s.AddSingleton<StartupViewModel>();

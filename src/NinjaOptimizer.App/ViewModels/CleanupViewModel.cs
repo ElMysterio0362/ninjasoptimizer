@@ -41,8 +41,17 @@ public sealed partial class CleanupItemViewModel(MaintenanceTask task) : Observa
         "maintenance.restart-audio" => "Icon.Refresh",
         "maintenance.restore-default-services" => "Icon.Settings",
         "maintenance.repair-store" => "Icon.Download",
+        "memory.working-sets" => "Icon.Memory",
+        "maintenance.repair-xbox-apps" => "Icon.Gamepad",
+        "maintenance.repair-camera" => "Icon.Monitor",
+        "maintenance.repair-microphone" => "Icon.Overlay",
+        "maintenance.force-shutdown" => "Icon.Power",
         _ => "Icon.Settings",
     };
+
+    /// <summary>Opções avançadas (desmarcadas).</summary>
+    public IReadOnlyList<CleanupOptionViewModel> Options { get; } = task.Options.Select(o => new CleanupOptionViewModel(task, o)).ToList();
+    public bool HasOptions => Options.Count > 0;
 
     [ObservableProperty] private long? _estimate;
     [ObservableProperty] private bool _isEstimating;
@@ -60,6 +69,24 @@ public sealed partial class CleanupItemViewModel(MaintenanceTask task) : Observa
     partial void OnIsEstimatingChanged(bool value) => OnPropertyChanged(nameof(EstimateText));
 }
 
+public sealed partial class CleanupOptionViewModel(MaintenanceTask task, MaintenanceOption option) : ObservableObject
+{
+    public MaintenanceOption Option { get; } = option;
+    public string Title => Option.Title + (Option.RequiresAdmin ? " (administrador)" : "");
+    public string ConsequencesText => string.Join(" ", Option.Consequences);
+    public bool HighRisk => Option.HighRisk;
+
+    public bool IsChecked
+    {
+        get => task.IsSelected(Option.Id);
+        set
+        {
+            if (value) task.SelectedOptions.Add(Option.Id); else task.SelectedOptions.Remove(Option.Id);
+            OnPropertyChanged();
+        }
+    }
+}
+
 /// <summary>Aba "Limpeza e manutenção": ações de fazer agora (sem desfazer), com estimativa antes e resultado depois.</summary>
 public sealed partial class CleanupViewModel : ObservableObject
 {
@@ -70,6 +97,9 @@ public sealed partial class CleanupViewModel : ObservableObject
     private bool _analyzed;
 
     public ObservableCollection<CleanupItemViewModel> Items { get; } = new();
+
+    /// <summary>Oferece "Reiniciar agora" (ligado pela tela Otimizar).</summary>
+    public Action? OfferRestart { get; set; }
 
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string _totalText = "";
@@ -123,7 +153,8 @@ public sealed partial class CleanupViewModel : ObservableObject
     private async Task RunAsync(CleanupItemViewModel? item)
     {
         if (item is null || IsBusy) return;
-        if (item.RequiresAdmin && !EnsureElevated()) return;
+        var chosenOptions = item.Options.Where(o => o.IsChecked).ToList();
+        if ((item.RequiresAdmin || chosenOptions.Any(o => o.Option.RequiresAdmin)) && !EnsureElevated()) return;
 
         var details = new List<string> { item.Description };
         if (item.Note is not null) details.Add("Atenção: " + item.Note);
@@ -132,14 +163,20 @@ public sealed partial class CleanupViewModel : ObservableObject
             details.Add("O que pode acontecer:");
             details.AddRange(item.Task.Consequences.Select(c => "   • " + c));
         }
+        foreach (var o in chosenOptions)
+        {
+            details.Add((o.HighRisk ? "Opção de risco alto: " : "Opção avançada: ") + o.Option.Title);
+            details.AddRange(o.Option.Consequences.Select(c => "   • " + c));
+        }
         if (!_dialogs.Confirm($"{item.Name}?", $"Isso não tem como desfazer. Leva {item.Task.Duration}.", details,
-                item.Note is null && item.Task.Consequences.Count == 0 ? DialogKind.Confirm : DialogKind.Danger, item.ActionText))
+                item.Note is null && item.Task.Consequences.Count == 0 && chosenOptions.Count == 0 ? DialogKind.Confirm : DialogKind.Danger, item.ActionText))
             return;
 
         IsBusy = true;
         item.IsRunning = true;
         try
         {
+            item.Task.Ui = new MaintenanceUi(_dialogs);
             var result = await item.Task.RunAsync(null, CancellationToken.None);
             _store.Record(item.Task.Id, new MaintenanceStore.Entry(DateTimeOffset.Now, result.BytesFreed, result.Success, result.Message));
             _log.Info($"Manutenção {item.Task.Id}: {result.Success} · {result.BytesFreed} bytes · {result.Message}");
@@ -164,6 +201,7 @@ public sealed partial class CleanupViewModel : ObservableObject
             {
                 _dialogs.Info(title, message, kind: result.Success ? DialogKind.Success : DialogKind.Danger);
             }
+            if (result.RequiresRestart) OfferRestart?.Invoke();
         }
         catch (Exception ex)
         {

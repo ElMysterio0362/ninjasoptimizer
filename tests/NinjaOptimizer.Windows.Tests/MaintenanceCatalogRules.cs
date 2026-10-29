@@ -48,6 +48,16 @@ public sealed class MaintenanceCatalogRules : IDisposable
     }
 
     [Fact]
+    public void Every_advanced_option_lists_its_consequences_and_starts_unchecked()
+    {
+        Assert.All(Build().SelectMany(t => t.Options.Select(o => (t, o))), x =>
+        {
+            Assert.NotEmpty(x.o.Consequences);
+            Assert.False(x.t.IsSelected(x.o.Id), $"{x.t.Id}/{x.o.Id} veio marcada");
+        });
+    }
+
+    [Fact]
     public void Ids_are_unique_and_texts_have_no_exclamation()
     {
         var tasks = Build();
