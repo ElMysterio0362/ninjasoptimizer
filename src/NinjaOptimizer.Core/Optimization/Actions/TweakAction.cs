@@ -48,6 +48,7 @@ public static class ActionReverter
         [CommandStateAction.KindId] = CommandStateAction.RevertAsync,
         [RegistryEachSubkeyAction.KindId] = RegistryEachSubkeyAction.RevertAsync,
         [DnsServersAction.KindId] = DnsServersAction.RevertAsync,
+        [NetAdapterPowerAction.KindId] = NetAdapterPowerAction.RevertAsync,
     };
 
     public static Task RevertAsync(SystemContext ctx, ActionSnapshot snapshot, CancellationToken ct)

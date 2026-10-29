@@ -38,6 +38,9 @@ public sealed class Tweak
 
     public bool RequiresRestart { get; init; }
 
+    /// <summary>Aviso extra mostrado só em notebook (ex.: gasta mais bateria).</summary>
+    public string? PortableWarning { get; init; }
+
     /// <summary>Condições para fazer sentido neste PC (vazio = sempre aplicável).</summary>
     public IReadOnlyList<TweakCondition> Conditions { get; init; } = [];
 

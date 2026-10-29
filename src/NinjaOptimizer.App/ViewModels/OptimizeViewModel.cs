@@ -60,6 +60,8 @@ public sealed partial class TweakItemViewModel(Tweak tweak) : ObservableObject
     /// <summary>false = não faz sentido neste PC (ex.: SysMain num HD); o toggle fica desabilitado com o motivo.</summary>
     [ObservableProperty] private bool _isApplicable = true;
     [ObservableProperty] private string _notApplicableReason = "";
+    /// <summary>Aviso só para este PC (ex.: notebook gasta mais bateria). Vazio = nada a avisar.</summary>
+    [ObservableProperty] private string _warningText = "";
 
     partial void OnIsApplicableChanged(bool value) { if (!value) IsSelected = false; }
 
@@ -255,6 +257,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
             var cond = _engine.CheckConditions(item.Tweak);
             item.IsApplicable = cond.Applicable;
             item.NotApplicableReason = cond.Reason;
+            item.WarningText = _engine.Context.Profile.IsPortable == true ? item.Tweak.PortableWarning ?? "" : "";
             try { item.IsApplied = await Task.Run(() => _engine.IsAppliedAsync(item.Tweak)); }
             catch (Exception ex) { _log.Error($"Status de {item.Tweak.Id}", ex); }
         }

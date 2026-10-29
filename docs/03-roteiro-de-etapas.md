@@ -215,6 +215,17 @@ Não grava `VisualFXSetting` em `Control Panel\Desktop` (placebo do .bat). Não 
 
 **Como testar no Windows:** aplique, saia e entre na conta: sem sombra sob as janelas e arrastar mostra só o contorno. Em `SystemPropertiesPerformance.exe` aparece "Ajustar para obter um melhor desempenho". **Desfazer** + sair/entrar volta exatamente ao que era.
 
+### ✅ D — Energia e periféricos
+
+| Id | O que faz | Perfis | Risco |
+|---|---|---|---|
+| `peripherals.usb-selective-suspend` | `powercfg` subgrupo USB `2a737441…` / `48e6b7a6…` = 0, **só na tomada** (bateria não muda) | Gamer | Baixo |
+| `network.adapter-power-saving` | `Set-NetAdapterPowerManagement -AllowComputerToTurnOffDevice Disabled` nas placas físicas ativas que estavam `Enabled` | nenhum | Médio |
+
+Nova ação `NetAdapterPowerAction`: guarda o valor por `InterfaceGuid`; pula placas desativadas e as que o driver não aceita (falha só se todas recusarem); na reversão ignora placa que não existe mais; GUID e valor validados antes de entrar no comando. Não usa `Disable-NetAdapterPowerManagement` (desligaria o Wake-on-LAN). Novo campo `Tweak.PortableWarning`: em notebook a linha mostra "vai gastar um pouco mais de bateria".
+
+**Como testar no Windows:** aplique "Não suspender dispositivos USB" e confira em Opções de energia → Alterar configurações avançadas → Configurações USB: "Desabilitado" em "Na tomada" e inalterado em "Na bateria". Aplique "Não desligar a placa de rede": no Gerenciador de Dispositivos → placa → Gerenciamento de Energia, a primeira caixa fica desmarcada e a do Wake-on-LAN como estava. **Desfazer** marca de novo.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

@@ -70,6 +70,10 @@ internal sealed class FakePowerCfg : ICommandRunner
     public bool MemoryCompression { get; set; } = true;
     public bool Hibernate { get; set; } = true;
 
+    /// <summary>Energia das placas físicas (Get-NetAdapterPowerManagement): Value = Enabled/Disabled/Unsupported.</summary>
+    public List<NetPowerState> NetPower { get; } = [new("{AAAA0000-0000-0000-0000-000000000001}", "Up", "Enabled")];
+    public HashSet<string> RefuseNetPower { get; } = [];
+
     /// <summary>Placas de rede conectadas (Get-NetAdapter).</summary>
     public List<(int Index, string Guid)> Adapters { get; } = [(12, "{AAAA0000-0000-0000-0000-000000000001}")];
 
@@ -84,6 +88,19 @@ internal sealed class FakePowerCfg : ICommandRunner
             if (arguments.Contains("(Get-MMAgent).MemoryCompression")) return Task.FromResult(new CommandResult(0, MemoryCompression ? "True\r\n" : "False\r\n", ""));
             if (arguments.Contains("Enable-MMAgent -MemoryCompression")) { MemoryCompression = true; return Task.FromResult(new CommandResult(0, "", "")); }
             if (arguments.Contains("Disable-MMAgent -MemoryCompression")) { MemoryCompression = false; return Task.FromResult(new CommandResult(0, "", "")); }
+            if (arguments.Contains("Set-NetAdapterPowerManagement"))
+            {
+                var guid = System.Text.RegularExpressions.Regex.Match(arguments, @"-eq '(\{[^']+\})'").Groups[1].Value;
+                var value = arguments.Contains("TurnOffDevice Enabled") ? "Enabled" : "Disabled";
+                var i = NetPower.FindIndex(a => a.Guid == guid);
+                if (i < 0) return Task.FromResult(new CommandResult(0, "", "")); // Where-Object vazio: nada acontece
+                if (NetPower[i].Value is not ("Enabled" or "Disabled") || RefuseNetPower.Contains(guid))
+                    return Task.FromResult(new CommandResult(1, "", "driver não suporta"));
+                NetPower[i] = NetPower[i] with { Value = value };
+                return Task.FromResult(new CommandResult(0, "", ""));
+            }
+            if (arguments.Contains("Get-NetAdapterPowerManagement"))
+                return Task.FromResult(new CommandResult(0, string.Concat(NetPower.Select(a => $"{a.Guid}|{a.Status}|{a.Value}\r\n")), ""));
             if (arguments.Contains("Get-NetAdapter"))
                 return Task.FromResult(new CommandResult(0, string.Concat(Adapters.Select(a => $"{a.Index}|{a.Guid}\r\n")), ""));
             if (arguments.Contains("Set-DnsClientServerAddress"))
@@ -177,3 +194,5 @@ internal static class Fakes
     public static SystemProfile FullProfile { get; } = new(true, NinjaOptimizer.Core.Hardware.DiskMediaType.Ssd, false,
         new HashSet<GpuVendor> { GpuVendor.Nvidia, GpuVendor.Amd, GpuVendor.Intel }, 22631);
 }
+
+internal sealed record NetPowerState(string Guid, string Status, string Value);

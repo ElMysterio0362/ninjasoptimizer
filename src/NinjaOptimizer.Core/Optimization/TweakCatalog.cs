@@ -37,6 +37,8 @@ public static class TweakCatalog
     private const string SubPciExpress = "501a4d13-42af-4429-9fd1-a8218c268e20";
     private const string LinkStatePowerManagement = "ee12f906-d277-404b-b6da-e5fa1a576df5";
     private const string MultimediaProfile = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile";
+    private const string SubUsb = "2a737441-1930-4402-8d77-b2bebba308a3";
+    private const string UsbSelectiveSuspend = "48e6b7a6-50f5-4782-a5d4-53bb8f07e226";
     private const string GraphicsDrivers = @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
 
     private const string FileSystem = @"SYSTEM\CurrentControlSet\Control\FileSystem";
@@ -748,6 +750,37 @@ public static class TweakCatalog
                 new RegistryValueAction(RegHive.CurrentUser, @"Control Panel\Desktop", "UserPreferencesMask",
                     new RegValue(RegKind.Binary, new byte[] { 0x90, 0x12, 0x03, 0x80, 0x10, 0x00, 0x00, 0x00 })),
             ],
+        },
+
+        // ═════════════ Catálogo extra D · Energia e periféricos ═════════════
+        new Tweak
+        {
+            Id = "peripherals.usb-selective-suspend",
+            Name = "Não suspender dispositivos USB",
+            Description =
+                "O Windows para de desligar portas USB paradas para economizar energia. Vale no plano de energia ativo, " +
+                "com o PC na tomada; na bateria nada muda.",
+            Benefit = "Corrige mouse, teclado, headset ou controle USB que \"dorme\", demora a responder ou desconecta.",
+            Category = TweakCategory.Cpu,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            Profiles = P(Gamer),
+            Actions = [new PowerSettingAction(SubUsb, UsbSelectiveSuspend, 0, "suspensão seletiva de USB desligada")],
+        },
+        new Tweak
+        {
+            Id = "network.adapter-power-saving",
+            Name = "Não desligar a placa de rede para economizar",
+            Description =
+                "Desmarca \"Permitir que o computador desligue este dispositivo para economizar energia\" nas placas de rede " +
+                "(Wi-Fi e cabo). O Wake-on-LAN não muda. A placa reinicia por alguns segundos ao aplicar.",
+            Benefit = "Corrige internet caindo ou demorando a voltar depois que o PC fica parado.",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            PortableWarning = "Neste notebook, a placa de rede vai gastar um pouco mais de bateria.",
+            Actions = [new NetAdapterPowerAction()],
         },
     ];
 }
