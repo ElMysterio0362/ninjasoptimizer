@@ -8,7 +8,7 @@ Identidade visual: preto de base, roxo `#44088C` como lâmina, Sora + Inter. Vej
 
 **Stack:** C# / .NET 8 + WPF (MVVM) · LibreHardwareMonitor · WMI — veja a [decisão de stack](docs/01-decisao-de-stack.md).
 
-## Estado atual — Etapa 2 concluída + catálogo extra (A–F)
+## Estado atual — Etapa 2 concluída + catálogo extra (A–M)
 
 | Módulo | Status |
 |---|---|
@@ -16,10 +16,12 @@ Identidade visual: preto de base, roxo `#44088C` como lâmina, Sora + Inter. Vej
 | Dashboard (resumo, gráficos ao vivo, otimização rápida) | ✅ |
 | Hardware (inventário completo + sensores em tempo real) | ✅ |
 | Otimizar (toggles, perfis, aplicar/reverter, histórico com desfazer, condições por hardware) | ✅ |
-| Limpeza e manutenção, Inicialização | ✅ |
-| Modo Gamer (detecção de jogo, pausa de processos) | ✅ |
+| Limpeza e manutenção (com opções avançadas e reparos de rede, Store, Xbox, câmera e microfone), Inicialização | ✅ |
+| Modo Gamer (detecção de jogo, pausa de processos, prioridade por jogo, limpeza da memória em espera, timer) | ✅ |
 | Segurança (ponto de restauração, backup .reg, journal, confirmação de risco alto, admin sob demanda) | ✅ |
-| Catálogo extra (análise do iGust Windows Boost): condições por hardware, novos ajustes, prioridade por jogo, reparos | ✅ A–F · G (Integridade de Memória) aguardando aprovação |
+| Catálogo extra (análise do iGust Windows Boost): condições por hardware, avisos de consequências, ajustes de risco, prioridade por jogo, reparos | ✅ A–M (a G virou a J1, Integridade de Memória) |
+| Apps do Windows (remover com escolha e reinstalar pelo Desfazer) | ✅ |
+| DNS com escolha de provedor e teste de velocidade | ✅ |
 | Benchmark | ✅ básico (CPU, memória, disco, histórico e comparação); GPU na Etapa 3 |
 | Overlay em jogos | Etapa 4 |
 | Gargalos e compatibilidade | Etapa 5 |

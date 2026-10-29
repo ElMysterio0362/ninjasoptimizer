@@ -154,6 +154,7 @@ public partial class App : Application
         s.AddSingleton(sp => new StartupManager(sp.GetRequiredService<IRegistryAccess>(), StartupFolders.Files));
         s.AddSingleton<StartupViewModel>();
         s.AddSingleton<DebloatViewModel>();
+        s.AddSingleton<DnsViewModel>();
         s.AddSingleton<IProcessControl, WindowsProcessControl>();
         s.AddSingleton(sp => new GameModeService(sp.GetRequiredService<IProcessControl>(),
             Path.Combine(sp.GetRequiredService<IAppPaths>().DataFolder, "gamemode.json")));

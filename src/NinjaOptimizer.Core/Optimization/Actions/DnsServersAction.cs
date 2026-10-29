@@ -6,8 +6,25 @@ namespace NinjaOptimizer.Core.Optimization.Actions;
 /// Define servidores DNS (IPv4) nas placas de rede físicas conectadas. O snapshot guarda o DNS
 /// fixo anterior de cada placa; sem DNS fixo, a reversão volta para o automático (DHCP).
 /// </summary>
-public sealed class DnsServersAction(string[] servers, string label) : TweakAction
+public sealed class DnsServersAction : TweakAction
 {
+    private readonly string[] servers;
+    private readonly string label;
+
+    /// <param name="servers">IPs do DNS; vazio = voltar ao automático (DHCP/roteador).</param>
+    public DnsServersAction(string[] servers, string label)
+    {
+        if (servers.Any(s => !IsIp(s))) throw new ArgumentException("Endereço de DNS inválido.", nameof(servers));
+        this.servers = servers;
+        this.label = label;
+    }
+
+    /// <summary>true = este ajuste volta o DNS para o automático.</summary>
+    public bool ResetsToAutomatic => servers.Length == 0;
+
+    /// <summary>Só endereços IP de verdade entram na linha do PowerShell (nada vindo do registro sem conferir).</summary>
+    internal static bool IsIp(string s) => System.Net.IPAddress.TryParse(s, out var ip) && ip.ToString() == s;
+
     public const string KindId = "dns";
     internal const string InterfacesKey = @"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces";
 
@@ -17,7 +34,9 @@ public sealed class DnsServersAction(string[] servers, string label) : TweakActi
 
     public override string Kind => KindId;
     public override IEnumerable<(RegHive Hive, string Key)> RegistryKeys => [(RegHive.LocalMachine, InterfacesKey)];
-    public override string Describe() => $"DNS das placas conectadas → {label} ({string.Join(", ", servers)})";
+    public override string Describe() => servers.Length == 0
+        ? "DNS das placas conectadas → automático (do roteador)"
+        : $"DNS das placas conectadas → {label} ({string.Join(", ", servers)})";
 
     internal static IReadOnlyList<(int Index, string Guid)> ParseAdapters(string output) =>
         output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -36,7 +55,9 @@ public sealed class DnsServersAction(string[] servers, string label) : TweakActi
         ctx.Registry.GetValue(RegHive.LocalMachine, $@"{InterfacesKey}\{guid}", "NameServer")?.Data as string;
 
     internal static string Normalize(string? list) =>
-        string.Join(",", (list ?? "").Split((char[])[',', ' '], StringSplitOptions.RemoveEmptyEntries));
+        string.Join(",", (list ?? "").Split((char[])[',', ' '], StringSplitOptions.RemoveEmptyEntries).Where(IsIp));
+
+    private static int Index(string? v) => int.TryParse(v, out var i) && i > 0 ? i : throw new InvalidOperationException("Registro do histórico com placa de rede inválida.");
 
     private static string ServerArg(IEnumerable<string> list) => "(" + string.Join(",", list.Select(s => $"'{s}'")) + ")";
 
@@ -60,8 +81,9 @@ public sealed class DnsServersAction(string[] servers, string label) : TweakActi
         var count = int.Parse(snapshot.Get("count")!);
         for (var i = 0; i < count; i++)
         {
+            var arg = servers.Length == 0 ? "-ResetServerAddresses" : "-ServerAddresses " + ServerArg(servers);
             var r = await ctx.Commands.RunAsync("powershell",
-                $"-NoProfile -NonInteractive -Command \"Set-DnsClientServerAddress -InterfaceIndex {snapshot.Get($"a{i}.index")} -ServerAddresses {ServerArg(servers)}\"", ct);
+                $"-NoProfile -NonInteractive -Command \"Set-DnsClientServerAddress -InterfaceIndex {Index(snapshot.Get($"a{i}.index"))} {arg}\"", ct);
             if (!r.Success) throw new InvalidOperationException($"O Windows recusou o DNS: {r.StdErr}".Trim());
         }
         await ctx.Commands.RunAsync("ipconfig", "/flushdns", ct);
@@ -79,11 +101,11 @@ public sealed class DnsServersAction(string[] servers, string label) : TweakActi
         var count = int.Parse(s.Get("count")!);
         for (var i = 0; i < count; i++)
         {
-            var prev = s.Get($"a{i}.prev");
+            var prev = Normalize(s.Get($"a{i}.prev")); // só IPs válidos
             var arg = string.IsNullOrEmpty(prev) ? "-ResetServerAddresses" : "-ServerAddresses " + ServerArg(prev.Split(','));
             // Placa removida desde então: o comando falha e não há nada a restaurar.
             await ctx.Commands.RunAsync("powershell",
-                $"-NoProfile -NonInteractive -Command \"Set-DnsClientServerAddress -InterfaceIndex {s.Get($"a{i}.index")} {arg}\"", ct);
+                $"-NoProfile -NonInteractive -Command \"Set-DnsClientServerAddress -InterfaceIndex {Index(s.Get($"a{i}.index"))} {arg}\"", ct);
         }
         await ctx.Commands.RunAsync("ipconfig", "/flushdns", ct);
     }

@@ -172,6 +172,9 @@ public sealed partial class OptimizeViewModel : ObservableObject
     /// <summary>Aba "Apps do Windows".</summary>
     public DebloatViewModel Debloat { get; }
 
+    /// <summary>Aba "DNS".</summary>
+    public DnsViewModel Dns { get; }
+
     private string _tab = "tweaks";
     private void SetTab(string tab, bool on)
     {
@@ -181,6 +184,8 @@ public sealed partial class OptimizeViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowCleanup));
         OnPropertyChanged(nameof(ShowStartup));
         OnPropertyChanged(nameof(ShowDebloat));
+        OnPropertyChanged(nameof(ShowDns));
+        if (tab == "dns") _ = Dns.RefreshAsync();
         if (tab == "debloat") _ = Debloat.EnsureLoadedAsync();
         if (tab == "cleanup") _ = Cleanup.EnsureAnalyzedAsync();
         if (tab == "startup") Startup.Refresh();
@@ -189,10 +194,13 @@ public sealed partial class OptimizeViewModel : ObservableObject
     public bool ShowCleanup { get => _tab == "cleanup"; set => SetTab("cleanup", value); }
     public bool ShowStartup { get => _tab == "startup"; set => SetTab("startup", value); }
     public bool ShowDebloat { get => _tab == "debloat"; set => SetTab("debloat", value); }
+    public bool ShowDns { get => _tab == "dns"; set => SetTab("dns", value); }
 
     public OptimizeViewModel(OptimizationEngine engine, DialogService dialogs, IElevationService elevation, AppSettings settings, AppLog log,
-        CleanupViewModel cleanup, StartupViewModel startup, DebloatViewModel debloat)
+        CleanupViewModel cleanup, StartupViewModel startup, DebloatViewModel debloat, DnsViewModel dns)
     {
+        Dns = dns;
+        dns.Changed = RefreshStatusAsync;
         Cleanup = cleanup;
         Startup = startup;
         Debloat = debloat;

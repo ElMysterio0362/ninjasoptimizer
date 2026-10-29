@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:c="clr-namespace:NinjaOptimizer.App.Controls"
-             xmlns:safety="clr-namespace:NinjaOptimizer.Core.Safety;assembly=NinjaOptimizer.Core">
+             xmlns:safety="clr-namespace:NinjaOptimizer.Core.Safety;assembly=NinjaOptimizer.Core"
+             xmlns:svc="clr-namespace:NinjaOptimizer.App.Services">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
@@ -360,6 +361,12 @@
                         <TextBlock Text="Apps do Windows" VerticalAlignment="Center" />
                     </StackPanel>
                 </RadioButton>
+                <RadioButton Style="{StaticResource TabPill}" GroupName="OptimizeTab" IsChecked="{Binding ShowDns, Mode=TwoWay}">
+                    <StackPanel Orientation="Horizontal">
+                        <c:Icon Data="{StaticResource Icon.Network}" Size="18" Margin="0,0,8,0" />
+                        <TextBlock Text="DNS" VerticalAlignment="Center" />
+                    </StackPanel>
+                </RadioButton>
             </WrapPanel>
             <StackPanel Visibility="{Binding ShowTweaks, Converter={StaticResource BoolToVis}}">
             <ItemsControl ItemsSource="{Binding Filters}" AutomationProperties.Name="Filtrar por categoria">
@@ -419,6 +426,55 @@
                 </Border>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource CleanupRow}" />
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- ───────── DNS ───────── -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0" ClipToBounds="True"
+                Visibility="{Binding DataContext.ShowDns, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}" DataContext="{Binding Dns}">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,14">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Height="36" Padding="16,0" Content="Testar velocidade"
+                                Command="{Binding TestCommand}" />
+                        <c:Icon Data="{StaticResource Icon.Network}" Foreground="{StaticResource AccentTextBrush}" Margin="0,0,10,0" />
+                        <TextBlock Style="{StaticResource Body}" FontWeight="SemiBold" Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    </DockPanel>
+                </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Providers}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" Padding="20,12">
+                                    <DockPanel>
+                                        <Grid DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0" MinWidth="110">
+                                            <Button Style="{StaticResource SecondarySmall}" Content="Usar este" HorizontalAlignment="Right"
+                                                    Command="{Binding DataContext.UseCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"
+                                                    Visibility="{Binding IsCurrent, Converter={StaticResource InverseBoolToVis}}" />
+                                            <Border Style="{StaticResource KindPill}" Tag="{x:Static svc:StatusKind.Ok}" HorizontalAlignment="Right"
+                                                    Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="Em uso" />
+                                            </Border>
+                                        </Grid>
+                                        <Border DockPanel.Dock="Right" Style="{StaticResource KindPill}" Tag="{Binding LatencyKind}" VerticalAlignment="Center" Margin="8,0,0,0"
+                                                Visibility="{Binding LatencyText, Converter={StaticResource EmptyToCollapsed}}">
+                                            <TextBlock Text="{Binding LatencyText}" />
+                                        </Border>
+                                        <Border DockPanel.Dock="Right" Style="{StaticResource KindPill}" Tag="{x:Static svc:StatusKind.Accent}" VerticalAlignment="Center" Margin="8,0,0,0"
+                                                Visibility="{Binding IsFastest, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="Mais rápido" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
+                                            <TextBlock Style="{StaticResource Small}" Text="{Binding Note}" Margin="0,2,0,0" />
+                                            <TextBlock Style="{StaticResource Label}" Text="{Binding ServersText}" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </ScrollViewer>
             </DockPanel>
         </Border>
@@ -495,6 +551,9 @@
         <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
                    Visibility="{Binding ShowCleanup, Converter={StaticResource BoolToVis}}"
                    Text="A limpeza não tem como desfazer: cada item diz o que apaga antes de rodar." />
+        <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
+                   Visibility="{Binding ShowDns, Converter={StaticResource BoolToVis}}"
+                   Text="O teste consulta cada servidor direto, sem trocar o DNS do PC. Em rede de empresa ou escola, trocar o DNS pode impedir o acesso a sites internos." />
         <TextBlock Grid.Row="3" Style="{StaticResource Small}" Foreground="{StaticResource TextFaintBrush}" Margin="2,12,0,0" MaxWidth="640" HorizontalAlignment="Left"
                    Visibility="{Binding ShowDebloat, Converter={StaticResource BoolToVis}}"
                    Text="Remove só da sua conta (a não ser que você marque a opção avançada). Partes do Windows, a Store, a Segurança do Windows e frameworks nunca aparecem aqui." />

@@ -66,12 +66,13 @@ public sealed partial class MainViewModel : ObservableObject
     public void Navigate(string key)
     {
         // "cleanup" abre a página Otimizar já na aba Limpeza e manutenção.
-        if (key is "cleanup" or "startup" or "debloat")
+        if (key is "cleanup" or "startup" or "debloat" or "dns")
         {
             var optimize = NavItems.First(n => n.Key == "optimize");
             var page = (OptimizeViewModel)optimize.Page;
             if (key == "cleanup") page.ShowCleanup = true;
             else if (key == "debloat") page.ShowDebloat = true;
+            else if (key == "dns") page.ShowDns = true;
             else page.ShowStartup = true;
             Current = optimize;
             return;

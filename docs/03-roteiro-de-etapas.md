@@ -356,6 +356,25 @@ Infra: `MaintenanceTask.Options`/`SelectedOptions`, `IMaintenanceUi` (perguntas 
 
 **Como testar no Windows (como administrador):** ligue "Limpar a memória em espera sozinho", baixe os limites (ex.: 256/8000 MB) e ligue o Modo Gamer: o log mostra "memória em espera limpa automaticamente". Com o timer ligado, `powercfg /energy` (ou o ClockRes da Sysinternals) mostra 0,5 ms enquanto o modo está ligado.
 
+### ✅ M — DNS com escolha e teste de velocidade (o que o DNS Jumper fazia)
+
+Nova aba **Otimizar → DNS**.
+
+| Provedor | IPv4 | Id do ajuste |
+|---|---|---|
+| Cloudflare | 1.1.1.1 · 1.0.0.1 | `network.dns-cloudflare` (o mesmo de antes) |
+| Google | 8.8.8.8 · 8.8.4.4 | `network.dns-google` |
+| Quad9 (bloqueia sites maliciosos) | 9.9.9.9 · 149.112.112.112 | `network.dns-quad9` |
+| OpenDNS | 208.67.222.222 · 208.67.220.220 | `network.dns-opendns` |
+| Automático (do roteador) | — | `network.dns-automatic` |
+
+- Todos Médio, fora dos perfis, com a consequência de rede de empresa/escola. "Usar este" desfaz o DNS do app que estava ativo antes de aplicar o novo, então o **Desfazer** sempre volta ao DNS original.
+- **Testar velocidade:** 2 rodadas × 5 domínios comuns por provedor, consulta tipo A por UDP direto ao servidor (sem trocar o DNS do PC), mediana em ms; o mais rápido entre os que responderam pelo menos metade ganha o selo. O "Automático" é medido no DNS atual (se automático) ou no roteador (gateway).
+- `DnsServersAction` aceita lista vazia (= `-ResetServerAddresses`). O formato do snapshot não mudou: entradas antigas do `network.dns-cloudflare` no `journal.json` continuam revertendo (teste com um snapshot no formato antigo).
+- **Correção de segurança:** ao reverter, o DNS anterior lido do registro agora só entra na linha do PowerShell depois de validado como IP, e o índice da placa como número.
+
+**Como testar no Windows (como administrador):** abra a aba DNS e clique em **Testar velocidade** (alguns segundos). Clique em "Usar este" no mais rápido e rode `ipconfig /all`. Escolha outro: o primeiro é desfeito antes. **Desfazer** no histórico volta ao DNS que estava antes de tudo.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

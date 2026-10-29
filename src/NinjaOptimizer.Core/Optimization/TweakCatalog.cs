@@ -1151,5 +1151,59 @@ public static class TweakCatalog
             Conditions = [TweakCondition.MinWindowsBuild(22000)],
             Actions = [LmDword(@"SYSTEM\CurrentControlSet\Control\Session Manager\kernel", "GlobalTimerResolutionRequests", 1)],
         },
+
+        // ═════════════ Catálogo extra M · Outros provedores de DNS (tela DNS) ═════════════
+        new Tweak
+        {
+            Id = "network.dns-google",
+            Name = "Usar DNS do Google (8.8.8.8)",
+            Description = "Troca o DNS das placas conectadas para 8.8.8.8 e 8.8.4.4. Ao reverter, volta exatamente ao DNS que estava antes (ou ao automático do roteador).",
+            Benefit = "Sites podem começar a carregar mais rápido que com o DNS do provedor.",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences = ["Em rede de empresa ou escola, sites e pastas internas podem parar de abrir."],
+            Actions = [new DnsServersAction(["8.8.8.8", "8.8.4.4"], "Google")],
+        },
+        new Tweak
+        {
+            Id = "network.dns-quad9",
+            Name = "Usar DNS Quad9 (9.9.9.9)",
+            Description = "Troca o DNS das placas conectadas para 9.9.9.9 e 149.112.112.112. Ao reverter, volta exatamente ao DNS que estava antes (ou ao automático do roteador).",
+            Benefit = "Bloqueia sites maliciosos conhecidos antes de abrir.",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences = ["Em rede de empresa ou escola, sites e pastas internas podem parar de abrir."],
+            Actions = [new DnsServersAction(["9.9.9.9", "149.112.112.112"], "Quad9")],
+        },
+        new Tweak
+        {
+            Id = "network.dns-opendns",
+            Name = "Usar OpenDNS (208.67.222.222)",
+            Description = "Troca o DNS das placas conectadas para 208.67.222.222 e 208.67.220.220. Ao reverter, volta exatamente ao DNS que estava antes (ou ao automático do roteador).",
+            Benefit = "Alternativa rápida ao DNS do provedor.",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences = ["Em rede de empresa ou escola, sites e pastas internas podem parar de abrir."],
+            Actions = [new DnsServersAction(["208.67.222.222", "208.67.220.220"], "OpenDNS")],
+        },
+        new Tweak
+        {
+            Id = "network.dns-automatic",
+            Name = "Usar o DNS automático do roteador",
+            Description = "Volta o DNS das placas conectadas para o automático (o que o roteador ou o provedor entrega). Ao reverter, volta o DNS fixo que estava antes.",
+            Benefit = "Desfaz um DNS fixo colocado à mão ou por outro programa.",
+            Category = TweakCategory.Network,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences = ["Em rede de empresa ou escola, sites e pastas internas podem parar de abrir."],
+            Actions = [new DnsServersAction([], "Automático")],
+        },
     ];
 }

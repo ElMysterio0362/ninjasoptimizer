@@ -46,6 +46,9 @@ public sealed class CatalogTests : IDisposable
         var bcdBefore = new Dictionary<string, string>(power.Bcd);
         // Ajustes que apagam um valor (bloqueios de política) precisam que ele exista antes.
         foreach (var d in tweak.Actions.OfType<RegistryDeleteValueAction>()) reg.SetValue(d.Hive, d.Key, d.Name, RegValue.Dword(0));
+        // "DNS automático" precisa de um DNS fixo antes para ter o que mudar.
+        if (tweak.Actions.OfType<DnsServersAction>().Any(a => a.ResetsToAutomatic))
+            foreach (var a in power.Adapters) reg.SetValue(RegHive.LocalMachine, $@"{DnsServersAction.InterfacesKey}\{a.Guid}", "NameServer", RegValue.Str("192.168.0.1"));
         var regBefore = reg.Values.ToDictionary(kv => kv.Key, kv => kv.Value.Serialize());
         var activeBefore = power.Active;
         var settingsBefore = new Dictionary<string, uint>(power.Settings);
