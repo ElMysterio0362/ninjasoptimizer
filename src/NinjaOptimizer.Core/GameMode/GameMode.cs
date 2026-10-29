@@ -45,6 +45,19 @@ public static class ProcessRules
 
     private static readonly string[] NotGames = ["launcher", "crashhandler", "crashreport", "unitycrashhandler", "easyanticheat", "uninstall", "setup", "redist", "vc_redist", "dxsetup"];
 
+    /// <summary>
+    /// Executáveis de jogos conhecidos fora das pastas das lojas (sugestão; o detectado rodando tem preferência).
+    /// Fora daqui de propósito: javaw (vale para todo Java), nomes genéricos demais.
+    /// </summary>
+    public static readonly HashSet<string> KnownGames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "FortniteClient-Win64-Shipping", "GTA5", "cs2", "VALORANT-Win64-Shipping", "League of Legends", "cod", "r5apex",
+        "RobloxPlayerBeta", "GoW", "GoWRagnarok", "gta_sa", "eurotrucks", "ets2", "RainbowSix", "re2", "re4", "re8",
+        "bf4", "BF2042", "BF6", "tlou-i", "tlou-ii", "tslgame", "RocketLeague", "Cyberpunk2077", "Terraria", "RDR2",
+        "RustClient", "DayZ", "EscapeFromTarkov", "MarvelRivals", "DeadByDaylight-Win64-Shipping", "Palworld-Win64-Shipping",
+        "GenshinImpact", "StreetFighter6", "SkyrimSE", "Warframe.x64", "ffxiv_dx11", "eFootball", "Deadlock",
+    };
+
     public static bool IsProtected(string name) => Protected.Contains(Strip(name));
 
     public static string Strip(string name) => name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? name[..^4] : name;
@@ -53,7 +66,7 @@ public static class ProcessRules
     public static bool IsGame(ProcessInfo p, IReadOnlyCollection<string> userGames)
     {
         var name = Strip(p.Name);
-        if (userGames.Contains(name, StringComparer.OrdinalIgnoreCase)) return true;
+        if (userGames.Contains(name, StringComparer.OrdinalIgnoreCase) || KnownGames.Contains(name)) return true;
         if (p.Path is null) return false;
         var lower = name.ToLowerInvariant();
         if (NotGames.Any(lower.Contains)) return false;

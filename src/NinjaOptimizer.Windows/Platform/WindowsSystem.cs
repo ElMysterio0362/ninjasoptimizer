@@ -63,6 +63,16 @@ public sealed class WindowsRegistryAccess : IRegistryAccess
         return k?.GetValueNames() ?? [];
     }
 
+    public void DeleteKeyIfEmpty(RegHive hive, string key)
+    {
+        using var root = Root(hive);
+        using (var k = root.OpenSubKey(key))
+        {
+            if (k is null || k.ValueCount > 0 || k.SubKeyCount > 0) return;
+        }
+        root.DeleteSubKey(key, throwOnMissingSubKey: false);
+    }
+
     public void DeleteValue(RegHive hive, string key, string name)
     {
         using var root = Root(hive);

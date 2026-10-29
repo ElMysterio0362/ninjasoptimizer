@@ -24,6 +24,16 @@ internal sealed class FakeRegistry : IRegistryAccess
     /// <summary>Subchaves existentes por "hive\\chave" (além das que já têm valores).</summary>
     public Dictionary<string, List<string>> SubKeys { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    public void DeleteKeyIfEmpty(RegHive hive, string key)
+    {
+        var full = $"{hive}\\{key}";
+        if (Values.Keys.Any(k => k.StartsWith(full + "\\", StringComparison.OrdinalIgnoreCase))) return;
+        if (SubKeys.TryGetValue(full, out var subs) && subs.Count > 0) return;
+        SubKeys.Remove(full);
+        var sep = full.LastIndexOf('\\');
+        if (SubKeys.TryGetValue(full[..sep], out var siblings)) siblings.RemoveAll(s => s.Equals(full[(sep + 1)..], StringComparison.OrdinalIgnoreCase));
+    }
+
     public IReadOnlyList<string> GetValueNames(RegHive hive, string key)
     {
         var prefix = $"{hive}\\{key}\\";

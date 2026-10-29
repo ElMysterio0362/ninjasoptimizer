@@ -7,6 +7,9 @@ using NinjaOptimizer.App.Services;
 using NinjaOptimizer.Core.Abstractions;
 using NinjaOptimizer.Core.GameMode;
 using NinjaOptimizer.Core.Settings;
+using NinjaOptimizer.Core.Optimization;
+using NinjaOptimizer.Core.Optimization.Actions;
+using NinjaOptimizer.Windows.Platform;
 
 namespace NinjaOptimizer.App.ViewModels;
 
@@ -25,6 +28,47 @@ public sealed partial class BackgroundAppViewModel(string name, string? path, lo
     }
 }
 
+public sealed record PriorityOption(CpuPriority? Value, string Title);
+
+/// <summary>Um jogo com a prioridade de CPU escolhida (Normal = sem ajuste).</summary>
+public sealed partial class GamePriorityItem(string exe, CpuPriority? current, GameModeViewModel owner) : ObservableObject
+{
+    public static IReadOnlyList<PriorityOption> Options { get; } =
+    [
+        new(null, "Normal (sem ajuste)"),
+        new(CpuPriority.AboveNormal, "Acima do normal (recomendado)"),
+        new(CpuPriority.High, "Alta (avançado)"),
+    ];
+
+    public string Exe { get; } = exe;
+    public string? Note => Exe.Equals("javaw.exe", StringComparison.OrdinalIgnoreCase)
+        ? "javaw.exe vale para todos os programas Java, não só o Minecraft." : null;
+    public bool HasNote => Note is not null;
+
+    private PriorityOption _selected = Options.FirstOrDefault(o => o.Value == current) ?? Options[0];
+    public PriorityOption Selected
+    {
+        get => _selected;
+        set
+        {
+            if (value is null || value == _selected) return;
+            var previous = _selected;
+            _selected = value;
+            OnPropertyChanged();
+            _ = ChangeAsync(previous, value);
+        }
+    }
+
+    private async Task ChangeAsync(PriorityOption previous, PriorityOption value)
+    {
+        if (!await owner.SetPriorityAsync(Exe, value.Value))
+        {
+            _selected = previous; // cancelado ou falhou: volta o combo
+            OnPropertyChanged(nameof(Selected));
+        }
+    }
+}
+
 public sealed partial class GameModeViewModel : ObservableObject
 {
     private readonly GameModeService _service;
@@ -33,6 +77,9 @@ public sealed partial class GameModeViewModel : ObservableObject
     private readonly SettingsStore _store;
     private readonly DialogService _dialogs;
     private readonly AppLog _log;
+    private readonly OptimizationEngine _engine;
+    private readonly IElevationService _elevation;
+    private readonly OptimizeViewModel _optimize;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(3) };
     private bool _activatedByAuto;
     private bool _checking;
@@ -41,6 +88,8 @@ public sealed partial class GameModeViewModel : ObservableObject
 
     public ObservableCollection<BackgroundAppViewModel> Apps { get; } = new();
     public ObservableCollection<string> UserGames { get; } = new();
+    public ObservableCollection<GamePriorityItem> Priorities { get; } = new();
+    public bool HasPriorities => Priorities.Count > 0;
 
     [ObservableProperty] private bool _isActive;
     [ObservableProperty] private string _statusTitle = "Modo Gamer desligado";
@@ -57,8 +106,13 @@ public sealed partial class GameModeViewModel : ObservableObject
     public string PauseSummary => $"{Gm.PauseList.Count} programa(s) na lista para pausar";
     public bool HasUserGames => UserGames.Count > 0;
 
-    public GameModeViewModel(GameModeService service, IProcessControl processes, AppSettings settings, SettingsStore store, DialogService dialogs, AppLog log)
+    public GameModeViewModel(GameModeService service, IProcessControl processes, AppSettings settings, SettingsStore store, DialogService dialogs, AppLog log,
+        OptimizationEngine engine, IElevationService elevation, OptimizeViewModel optimize)
     {
+        _engine = engine;
+        _elevation = elevation;
+        _optimize = optimize;
+        Priorities.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasPriorities));
         _service = service;
         _processes = processes;
         _settings = settings;
@@ -180,6 +234,73 @@ public sealed partial class GameModeViewModel : ObservableObject
         Apps.Clear();
         foreach (var g in groups.OrderByDescending(g => IsInPauseList(g.Name)).ThenByDescending(g => g.Mem))
             Apps.Add(new BackgroundAppViewModel(g.Name, g.Path, g.Mem, g.Count, this));
+        RefreshPriorities(procs);
+    }
+
+    /// <summary>Jogos para a prioridade: os abertos agora, os da sua lista e os que já têm prioridade.</summary>
+    private void RefreshPriorities(IReadOnlyList<ProcessInfo> procs)
+    {
+        var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in procs.Where(p => ProcessRules.IsGame(p, Gm.UserGames))) names.Add(ProcessRules.Strip(p.Name) + ".exe");
+        foreach (var g in Gm.UserGames) names.Add(g + ".exe");
+        foreach (var e in _engine.Journal.ActiveEntries.Where(e => e.TweakId.StartsWith(GamePriority.IdPrefix)))
+            if (e.Snapshots.FirstOrDefault()?.Get("exe") is { } exe) names.Add(exe);
+        Priorities.Clear();
+        foreach (var exe in names.Where(ProcessPriorityAction.IsValidExe))
+            Priorities.Add(new GamePriorityItem(exe, ProcessPriorityAction.Current(_engine.Context.Registry, exe), this));
+    }
+
+    /// <summary>Troca a prioridade de um jogo pelo motor (com histórico e Desfazer). false = não mudou.</summary>
+    internal async Task<bool> SetPriorityAsync(string exe, CpuPriority? priority)
+    {
+        if (!_elevation.IsElevated)
+        {
+            if (_dialogs.Confirm("Abrir como administrador?",
+                    "A prioridade por jogo fica numa parte do registro que exige administrador. O NinjaOptimizer reabre nesta mesma página.",
+                    confirmText: "Reabrir como administrador")
+                && WindowsElevationService.RelaunchElevated("--page gamemode"))
+                Application.Current.Shutdown();
+            return false;
+        }
+        if (priority == CpuPriority.High && !_dialogs.Confirm($"Prioridade alta para {exe}?",
+                "Use só se o jogo engasga por causa de programas em segundo plano.",
+                ["Áudio do Discord, OBS ou chamadas pode falhar enquanto o jogo roda.",
+                 "Alguns anti-cheats ignoram ou rebaixam a prioridade.",
+                 "Pode desfazer quando quiser no histórico ou voltando para Normal."],
+                DialogKind.Danger, "Usar prioridade alta"))
+            return false;
+
+        IsBusy = true;
+        try
+        {
+            // Tira a prioridade anterior deste jogo (se houver) antes de aplicar a nova.
+            if (GamePriority.ActiveEntry(_engine.Journal, exe) is { } old)
+            {
+                var r = await _engine.RevertAsync(old.Id);
+                if (!r.Success) throw new InvalidOperationException(r.Message);
+            }
+            if (priority is { } p)
+            {
+                var report = await _engine.ApplyAsync([GamePriority.Create(exe, p)], new ApplyOptions
+                {
+                    CreateRestorePoint = _settings.CreateRestorePoint,
+                    AbortIfRestorePointFails = _settings.AbortIfRestorePointFails,
+                });
+                var result = report.Results.SingleOrDefault();
+                if (report.Aborted || result?.Outcome == TweakOutcome.Failed)
+                    throw new InvalidOperationException(report.AbortReason ?? result?.Message);
+            }
+            _log.Info($"Prioridade de {exe}: {(priority is { } x ? LabelsPriority.Of(x) : "Normal")}");
+            await _optimize.RefreshStatusAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _log.Error("Prioridade por jogo", ex);
+            _dialogs.Info("Não deu para mudar a prioridade", ex.Message, kind: DialogKind.Danger);
+            return false;
+        }
+        finally { IsBusy = false; }
     }
 
     internal bool IsInPauseList(string name) => Gm.PauseList.Contains(name, StringComparer.OrdinalIgnoreCase);

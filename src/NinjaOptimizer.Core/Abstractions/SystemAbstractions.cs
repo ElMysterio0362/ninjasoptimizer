@@ -42,6 +42,8 @@ public interface IRegistryAccess
     void DeleteValue(RegHive hive, string key, string name);
     IReadOnlyList<string> GetSubKeyNames(RegHive hive, string key);
     IReadOnlyList<string> GetValueNames(RegHive hive, string key);
+    /// <summary>Apaga a chave só se ela não tem valores nem subchaves.</summary>
+    void DeleteKeyIfEmpty(RegHive hive, string key);
 }
 
 public enum ServiceStartMode { Boot, System, Automatic, AutomaticDelayed, Manual, Disabled }

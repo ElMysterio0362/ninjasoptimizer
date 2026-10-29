@@ -226,6 +226,20 @@ Nova ação `NetAdapterPowerAction`: guarda o valor por `InterfaceGuid`; pula pl
 
 **Como testar no Windows:** aplique "Não suspender dispositivos USB" e confira em Opções de energia → Alterar configurações avançadas → Configurações USB: "Desabilitado" em "Na tomada" e inalterado em "Na bateria". Aplique "Não desligar a placa de rede": no Gerenciador de Dispositivos → placa → Gerenciamento de Energia, a primeira caixa fica desmarcada e a do Wake-on-LAN como estava. **Desfazer** marca de novo.
 
+### ✅ E — Prioridade de CPU por jogo (Modo Gamer)
+
+| Id | O que faz | Perfis | Risco |
+|---|---|---|---|
+| `gaming.process-priority:<exe>` (um por jogo) | `IFEO\<exe>\PerfOptions\CpuPriorityClass` = 6 (Acima do normal, padrão) ou 3 (Alta, com aviso) | nenhum | Médio |
+
+- Página **Modo Gamer → Prioridade de CPU**: lista os jogos abertos agora, os de "Meus jogos" e os que já têm prioridade. Cada um tem Normal / Acima do normal / Alta. Passa pelo motor: ponto de restauração, histórico e **Desfazer** iguais aos outros ajustes.
+- Nova ação `ProcessPriorityAction`: aceita só nome de arquivo `.exe` (sem pasta, sem caracteres inválidos) e só valores de `PerfOptions` (1, 2, 3, 5, 6 — nunca 4/Tempo real). Escreve só `CpuPriorityClass`; outros valores do IFEO ficam intactos. Na reversão volta o valor anterior ou apaga, e remove `PerfOptions` e `IFEO\<exe>` só se foram criadas pelo ajuste e ficaram vazias. Revalida o nome ao reverter (o journal fica em disco).
+- Infra: `IRegistryAccess.DeleteKeyIfEmpty`.
+- Detecção de jogo do Modo Gamer passou a reconhecer também executáveis conhecidos fora das lojas (`ProcessRules.KnownGames`, tirados da análise; não inclui `javaw.exe`). Os nomes não foram conferidos um a um: o executável detectado rodando tem preferência.
+- Avisos: Alta pode fazer o áudio do Discord/OBS engasgar; anti-cheats podem ignorar; `javaw.exe` vale para todo Java.
+
+**Como testar no Windows (como administrador):** abra um jogo, vá em Modo Gamer → Prioridade de CPU e escolha "Acima do normal". Feche e abra o jogo: no Gerenciador de Tarefas → Detalhes → botão direito → Definir prioridade, aparece "Acima do normal". Volte para Normal (ou **Desfazer** no histórico de Otimizar): em `regedit`, `Image File Execution Options\<jogo>.exe` some se não existia antes.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 
