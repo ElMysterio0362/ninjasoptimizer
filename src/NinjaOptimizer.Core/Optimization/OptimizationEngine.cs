@@ -21,7 +21,7 @@ public sealed class ApplyOptions
     public IProgress<string>? Progress { get; init; }
 }
 
-public enum TweakOutcome { Applied, AlreadyApplied, Failed, SkippedHighRisk }
+public enum TweakOutcome { Applied, AlreadyApplied, Failed, SkippedHighRisk, NotApplicable }
 
 public sealed record TweakResult(Tweak Tweak, TweakOutcome Outcome, string Message, JournalEntry? Entry = null);
 
@@ -56,6 +56,11 @@ public sealed class OptimizationEngine(
 
     public ChangeJournal Journal => journal;
 
+    /// <summary>Contexto do sistema (o app atualiza o resumo de hardware nele).</summary>
+    public SystemContext Context => ctx;
+
+    public ConditionResult CheckConditions(Tweak tweak) => tweak.CheckConditions(ctx);
+
     public async Task<bool> IsAppliedAsync(Tweak tweak, CancellationToken ct = default)
     {
         foreach (var a in tweak.Actions)
@@ -67,6 +72,16 @@ public sealed class OptimizationEngine(
     {
         var tweaks = selection.DistinctBy(t => t.Id).ToList();
         var results = new List<TweakResult>();
+
+        // 0) Ajustes que não fazem sentido neste PC (ex.: SysMain num HD) nunca são aplicados.
+        foreach (var t in tweaks.ToList())
+        {
+            if (t.CheckConditions(ctx) is { Applicable: false } c)
+            {
+                results.Add(new(t, TweakOutcome.NotApplicable, c.Reason));
+                tweaks.Remove(t);
+            }
+        }
 
         // 1) Risco alto exige confirmação explícita.
         var highRisk = tweaks.Where(t => t.Risk == RiskLevel.High).ToList();

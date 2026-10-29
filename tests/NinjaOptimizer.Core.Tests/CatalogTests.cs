@@ -25,7 +25,9 @@ public sealed class CatalogTests : IDisposable
         foreach (var name in ServiceNames) svc.Services[name] = (ServiceStartMode.Automatic, true);
         var power = new FakePowerCfg { Registry = reg };
         reg.SubKeys[$@"LocalMachine\{DnsServersAction.InterfacesKey}"] = [.. power.Adapters.Select(a => a.Guid)];
-        var engine = new OptimizationEngine(new SystemContext(reg, svc, power),
+        // PC "que cumpre tudo": as condições são testadas à parte (ConditionTests)
+        var ctx = new SystemContext(reg, svc, power) { Profile = Fakes.FullProfile };
+        var engine = new OptimizationEngine(ctx,
             new ChangeJournal(Path.Combine(_paths.DataFolder, Guid.NewGuid() + ".json")),
             new FakeRestorePoint(), new FakeBackup(), new FakeElevation(), _paths);
         return (engine, reg, svc, power);

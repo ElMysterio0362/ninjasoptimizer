@@ -31,7 +31,7 @@
 
                     <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center" Margin="16,0,0,0"
                               IsChecked="{Binding IsSelected, Mode=TwoWay}" AutomationProperties.Name="{Binding Name}"
-                              ToolTip="Selecionar para aplicar" />
+                              IsEnabled="{Binding IsApplicable}" ToolTip="Selecionar para aplicar" ToolTipService.ShowOnDisabled="True" />
 
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Style="{StaticResource KindPill}" Tag="{Binding AppliedKind}" Margin="8,0,0,0" Visibility="{Binding IsApplied, Converter={StaticResource BoolToVis}}">
@@ -56,6 +56,10 @@
                         <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                         <TextBlock Style="{StaticResource Small}" LineHeight="18" Text="{Binding Description}" Margin="0,2,0,0" />
                         <TextBlock Style="{StaticResource Small}" FontSize="12" Foreground="{StaticResource AccentTextBrush}" Text="{Binding Benefit}" Margin="0,4,0,0" />
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding IsApplicable, Converter={StaticResource InverseBoolToVis}}">
+                            <c:Icon Data="{StaticResource Icon.Lock}" Size="13" Foreground="{StaticResource WarningBrush}" Margin="0,0,6,0" />
+                            <TextBlock Style="{StaticResource Small}" FontSize="12" Foreground="{StaticResource WarningBrush}" Text="{Binding NotApplicableReason}" TextWrapping="Wrap" />
+                        </StackPanel>
                     </StackPanel>
                 </DockPanel>
             </Border>

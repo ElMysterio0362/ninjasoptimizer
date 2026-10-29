@@ -593,6 +593,7 @@ public static class TweakCatalog
             Risk = RiskLevel.Medium, // programas podem abrir um pouco mais devagar num HD
             Impact = ImpactLevel.Medium,
             Profiles = P(),
+            Conditions = [TweakCondition.SystemDriveIsSsd], // num HD o SysMain ajuda: lá ele fica
             Actions = [new ServiceStartupAction("SysMain", ServiceStartMode.Disabled)],
         },
         new Tweak

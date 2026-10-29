@@ -52,9 +52,21 @@ public partial class App : Application
         var settings = _services.GetRequiredService<AppSettings>();
         _services.GetRequiredService<ISensorService>().Start(TimeSpan.FromMilliseconds(Math.Max(500, settings.SensorIntervalMs)));
 
+        _ = LoadSystemProfileAsync(optimize, log);
         await Task.WhenAll(
             optimize.RefreshStatusAsync(),
             _services.GetRequiredService<DashboardViewModel>().LoadAsync());
+    }
+
+    private static async Task LoadSystemProfileAsync(OptimizeViewModel optimize, AppLog log)
+    {
+        try
+        {
+            var p = await NinjaOptimizer.Windows.Hardware.SystemProfileProbe.ReadAsync();
+            log.Info($"Perfil do PC: disco do Windows={p.SystemDriveType} portátil={p.IsPortable} GPUs={string.Join(",", p.GpuVendors ?? new HashSet<GpuVendor>())} build={p.WindowsBuild}");
+            optimize.SetSystemProfile(p);
+        }
+        catch (Exception ex) { log.Error("Ler perfil do PC", ex); }
     }
 
     /// <summary>Restaura página e seleção após reabrir como administrador.</summary>

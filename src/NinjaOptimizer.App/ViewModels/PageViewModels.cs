@@ -124,7 +124,8 @@ public sealed partial class DashboardViewModel : ObservableObject
 
         var applied = _optimize.AllItems.Where(i => i.IsApplied).Select(i => i.Tweak.Id).ToHashSet();
         QuickItems.Clear();
-        var quick = TweakCatalog.ForProfile(QuickProfile);
+        var notApplicable = _optimize.AllItems.Where(i => !i.IsApplicable).Select(i => i.Tweak.Id).ToHashSet();
+        var quick = TweakCatalog.ForProfile(QuickProfile).Where(t => !notApplicable.Contains(t.Id)).ToList();
         _quickPending = quick.Count(t => !applied.Contains(t.Id));
         // Mostra os 5 de maior impacto (pendentes primeiro); o resto vira "e mais N ajustes".
         foreach (var t in quick.OrderBy(t => applied.Contains(t.Id)).ThenByDescending(t => t.Impact).Take(5))
@@ -174,7 +175,7 @@ public sealed partial class DashboardViewModel : ObservableObject
                     ? "Um segundo pente igual dobra a largura de banda" : "Atenção: confira os slots no manual da placa",
                 StatusKind.Warning, "Ver detalhes", new RelayCommand(() => Navigate?.Invoke("hardware"))));
 
-        foreach (var item in _optimize.AllItems.Where(i => !applied.Contains(i.Tweak.Id))
+        foreach (var item in _optimize.AllItems.Where(i => !applied.Contains(i.Tweak.Id) && i.IsApplicable)
                      .OrderByDescending(i => i.Tweak.Impact).ThenBy(i => i.Tweak.Risk).Take(4 - Recommendations.Count))
         {
             var tweak = item.Tweak;

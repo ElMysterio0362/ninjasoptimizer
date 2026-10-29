@@ -98,4 +98,7 @@ public sealed class SystemContext(IRegistryAccess registry, IServiceManager serv
     public IRegistryAccess Registry { get; } = registry;
     public IServiceManager Services { get; } = services;
     public ICommandRunner Commands { get; } = commands;
+
+    /// <summary>Resumo do hardware para as condições dos ajustes (carregado em segundo plano pelo app).</summary>
+    public NinjaOptimizer.Core.Optimization.SystemProfile Profile { get; set; } = NinjaOptimizer.Core.Optimization.SystemProfile.NotLoaded;
 }

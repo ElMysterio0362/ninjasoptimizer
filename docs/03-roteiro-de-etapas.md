@@ -178,6 +178,23 @@ Página nova **Modo Gamer** no menu lateral.
 3. Com "Ligar sozinho" ativo, abra um jogo da Steam: o status muda para "Modo Gamer ligado · nome do jogo". Feche o jogo: em até 3 s tudo é retomado.
 4. Ligue o modo, feche o NinjaOptimizer e confira que nada ficou suspenso.
 
+## Catálogo extra — análise do iGust Windows Boost
+
+Funcionalidades tiradas da engenharia reversa de um .bat de otimização (`otim-inspo/analises/features-para-ninjaoptimizer.md`), reimplementadas em C#. Nada do .bat é executado. Feito em blocos A–F; o bloco G (Integridade de Memória/VBS) só com aprovação explícita.
+
+### ✅ A — Condições de aplicabilidade
+- `TweakCondition` (`Optimization/Conditions.cs`): `SystemDriveIsSsd`, `IsDesktop`, `IsPortable`, `HasGpuVendor`, `ServiceExists`, `MinWindowsBuild`. `Tweak.Conditions` (vazio = sempre).
+- `SystemContext.Profile` (`SystemProfile`): tipo do disco do Windows (MSFT_Partition → MSFT_PhysicalDisk + `DiskTypeHeuristics`), notebook (`ChassisTypes` portátil ou `Win32_Battery`), fabricante das GPUs pelo PCI Vendor ID (10DE/1002/8086) e build. Lido em segundo plano ao abrir o app (`SystemProfileProbe`).
+- O motor nunca aplica item não aplicável (`TweakOutcome.NotApplicable`). Perfis e a otimização rápida pulam sem avisar. Sem certeza (disco desconhecido, perfil ainda carregando) → bloqueado com o motivo.
+- Interface: toggle desabilitado e o motivo com um cadeado (ex.: "Só para SSD — o Windows está num HD").
+- `services.sysmain` agora tem `Conditions = [SystemDriveIsSsd]`.
+
+| Id | Mudança |
+|---|---|
+| `services.sysmain` | só em SSD |
+
+**Como testar no Windows:** num PC com o Windows num HD, "Desativar o SysMain" aparece bloqueado com o motivo; num SSD, normal. O log (`%LocalAppData%\NinjaOptimizer\logs`) mostra a linha "Perfil do PC: disco do Windows=…".
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

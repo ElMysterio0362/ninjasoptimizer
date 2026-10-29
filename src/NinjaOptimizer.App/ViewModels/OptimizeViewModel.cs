@@ -57,6 +57,12 @@ public sealed partial class TweakItemViewModel(Tweak tweak) : ObservableObject
     [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private bool _isApplied;
 
+    /// <summary>false = não faz sentido neste PC (ex.: SysMain num HD); o toggle fica desabilitado com o motivo.</summary>
+    [ObservableProperty] private bool _isApplicable = true;
+    [ObservableProperty] private string _notApplicableReason = "";
+
+    partial void OnIsApplicableChanged(bool value) { if (!value) IsSelected = false; }
+
     /// <summary>"Aplicado" (pelo app, desfazível no histórico) ou "Já configurado antes do NinjaOptimizer" (o sistema já estava assim).</summary>
     [ObservableProperty] private string _appliedText = "Aplicado";
     [ObservableProperty] private StatusKind _appliedKind = StatusKind.Ok;
@@ -246,6 +252,9 @@ public sealed partial class OptimizeViewModel : ObservableObject
                 : item.AppliedByApp ? "Aplicado"
                 : "Já configurado antes do NinjaOptimizer";
             item.AppliedKind = pending ? StatusKind.Warning : item.AppliedByApp ? StatusKind.Ok : StatusKind.Neutral;
+            var cond = _engine.CheckConditions(item.Tweak);
+            item.IsApplicable = cond.Applicable;
+            item.NotApplicableReason = cond.Reason;
             try { item.IsApplied = await Task.Run(() => _engine.IsAppliedAsync(item.Tweak)); }
             catch (Exception ex) { _log.Error($"Status de {item.Tweak.Id}", ex); }
         }
@@ -267,7 +276,8 @@ public sealed partial class OptimizeViewModel : ObservableObject
     [RelayCommand]
     private void SelectProfile(OptimizationProfile profile)
     {
-        var ids = TweakCatalog.ForProfile(profile).Select(t => t.Id).ToHashSet();
+        // Perfis pulam, sem avisar, o que não se aplica a este PC.
+        var ids = TweakCatalog.ForProfile(profile).Where(t => _engine.CheckConditions(t).Applicable).Select(t => t.Id).ToHashSet();
         foreach (var item in Items) item.IsSelected = ids.Contains(item.Tweak.Id);
         Status = $"Perfil {LabelsPt.Of(profile)}: {ids.Count} ajuste(s) selecionado(s).";
     }
@@ -282,7 +292,14 @@ public sealed partial class OptimizeViewModel : ObservableObject
     public void SelectByIds(IEnumerable<string> ids)
     {
         var set = ids.ToHashSet();
-        foreach (var item in Items) item.IsSelected = set.Contains(item.Tweak.Id);
+        foreach (var item in Items) item.IsSelected = set.Contains(item.Tweak.Id) && item.IsApplicable;
+    }
+
+    /// <summary>Chamado quando o resumo de hardware termina de carregar.</summary>
+    public void SetSystemProfile(SystemProfile profile)
+    {
+        _engine.Context.Profile = profile;
+        _ = RefreshStatusAsync();
     }
 
     [RelayCommand]
@@ -292,7 +309,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
     public Task<ApplyReport?> QuickOptimizeAsync(OptimizationProfile profile)
     {
         SelectProfile(profile);
-        return ApplyAsync(TweakCatalog.ForProfile(profile));
+        return ApplyAsync(TweakCatalog.ForProfile(profile).Where(t => _engine.CheckConditions(t).Applicable).ToList());
     }
 
     /// <summary>Usado pelas recomendações do Dashboard.</summary>
@@ -381,6 +398,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
                 TweakOutcome.Applied => $"Aplicado: {r.Tweak.Name}",
                 TweakOutcome.AlreadyApplied => $"Já estava ativo: {r.Tweak.Name}",
                 TweakOutcome.SkippedHighRisk => $"Pulado (risco alto): {r.Tweak.Name}",
+                TweakOutcome.NotApplicable => $"Não se aplica a este PC: {r.Tweak.Name}. {r.Message}",
                 _ => $"Falhou: {r.Tweak.Name}. {r.Message}",
             });
         }

@@ -38,6 +38,17 @@ public sealed class Tweak
 
     public bool RequiresRestart { get; init; }
 
+    /// <summary>Condições para fazer sentido neste PC (vazio = sempre aplicável).</summary>
+    public IReadOnlyList<TweakCondition> Conditions { get; init; } = [];
+
+    /// <summary>Primeira condição que falha, ou Ok.</summary>
+    public ConditionResult CheckConditions(Abstractions.SystemContext ctx)
+    {
+        foreach (var c in Conditions)
+            if (c.Check(ctx) is { Applicable: false } r) return r;
+        return ConditionResult.Ok;
+    }
+
     /// <summary>Reversível se todas as ações guardam o estado anterior.</summary>
     public bool Reversible => Actions.All(a => a.Reversible);
 

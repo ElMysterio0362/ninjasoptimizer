@@ -8,16 +8,18 @@ Identidade visual: preto de base, roxo `#44088C` como lâmina, Sora + Inter. Vej
 
 **Stack:** C# / .NET 8 + WPF (MVVM) · LibreHardwareMonitor · WMI — veja a [decisão de stack](docs/01-decisao-de-stack.md).
 
-## Estado atual — Etapa 1
+## Estado atual — Etapa 2 concluída + catálogo extra em andamento
 
 | Módulo | Status |
 |---|---|
 | Interface base com a identidade visual NinjaOptimizer (tema, ícones, fontes, animações) | ✅ |
 | Dashboard (resumo, gráficos ao vivo, otimização rápida) | ✅ |
 | Hardware (inventário completo + sensores em tempo real) | ✅ |
-| Otimizar (toggles, perfis, aplicar/reverter, histórico com desfazer) | ✅ motor completo + 3 otimizações |
+| Otimizar (toggles, perfis, aplicar/reverter, histórico com desfazer, condições por hardware) | ✅ |
+| Limpeza e manutenção, Inicialização | ✅ |
+| Modo Gamer (detecção de jogo, pausa de processos) | ✅ |
 | Segurança (ponto de restauração, backup .reg, journal, confirmação de risco alto, admin sob demanda) | ✅ |
-| Catálogo completo de otimizações | Etapa 2 |
+| Catálogo extra (análise do iGust Windows Boost) | em andamento — veja o roteiro |
 | Benchmark | ✅ básico (CPU, memória, disco, histórico e comparação); GPU na Etapa 3 |
 | Overlay em jogos | Etapa 4 |
 | Gargalos e compatibilidade | Etapa 5 |

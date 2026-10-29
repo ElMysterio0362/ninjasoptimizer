@@ -1,3 +1,4 @@
+using NinjaOptimizer.Core.Optimization;
 using NinjaOptimizer.Core.Abstractions;
 
 namespace NinjaOptimizer.Core.Tests;
@@ -169,4 +170,10 @@ internal sealed class TempPaths : IAppPaths, IDisposable
     public string BackupFolder => Path.Combine(DataFolder, "backups");
     public string LogFolder => Path.Combine(DataFolder, "logs");
     public void Dispose() { try { Directory.Delete(DataFolder, true); } catch { } }
+}
+
+internal static class Fakes
+{
+    public static SystemProfile FullProfile { get; } = new(true, NinjaOptimizer.Core.Hardware.DiskMediaType.Ssd, false,
+        new HashSet<GpuVendor> { GpuVendor.Nvidia, GpuVendor.Amd, GpuVendor.Intel }, 22631);
 }
