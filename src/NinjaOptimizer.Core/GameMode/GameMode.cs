@@ -80,6 +80,14 @@ public sealed class GameModeSettings
     public bool AutoActivate { get; set; } = true;
     public List<string> PauseList { get; set; } = [.. ProcessRules.DefaultPauseList];
     public List<string> UserGames { get; set; } = [];
+
+    /// <summary>Limpar a memória em espera automaticamente enquanto o Modo Gamer está ligado.</summary>
+    public bool AutoPurgeStandby { get; set; }
+    public int StandbyThresholdMb { get; set; } = 1024;
+    public int FreeThresholdMb { get; set; } = 1024;
+
+    /// <summary>Pedir timer de 0,5 ms enquanto o Modo Gamer está ligado.</summary>
+    public bool HighResolutionTimer { get; set; }
 }
 
 /// <summary>

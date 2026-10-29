@@ -347,6 +347,15 @@ Infra: `MaintenanceTask.Options`/`SelectedOptions`, `IMaintenanceUi` (perguntas 
 4. Aplique "Desativar os serviços Xbox" e rode **Reparar os apps Xbox**: ele oferece desfazer o ajuste em vez de mexer por fora.
 5. Em Verificar erros no disco, marque a verificação completa: o chkdsk agenda para o próximo boot (não reinicie se não puder deixar o PC parado).
 
+### ✅ L — Modo Gamer: memória em espera e timer (o que o ISLC fazia)
+
+- **Limpar a memória em espera sozinho** (desligado por padrão): a cada 5 s, só com o Modo Gamer ligado, limpa a lista em espera quando ela passa de **1024 MB** *e* a memória livre fica abaixo de **1024 MB** (os dois limites são editáveis). Intervalo mínimo de 30 s entre limpezas. Reaproveita a limpeza do `memory.standby-list` (precisa de administrador).
+- **Timer de alta resolução (0,5 ms)** (desligado por padrão): `NtSetTimerResolution` ao ligar o Modo Gamer, solto ao desligar e ao fechar o app (o Windows solta sozinho se o app travar).
+- Novo ajuste `gaming.global-timer-resolution` (`kernel\GlobalTimerResolutionRequests=1`, Windows 11, Médio, reinício, fora dos perfis): sem ele, no Windows 11 o timer pedido vale só para o próprio app — a página avisa.
+- Consequências na própria página: engasgo curto na limpeza; mais energia e bateria com o timer.
+
+**Como testar no Windows (como administrador):** ligue "Limpar a memória em espera sozinho", baixe os limites (ex.: 256/8000 MB) e ligue o Modo Gamer: o log mostra "memória em espera limpa automaticamente". Com o timer ligado, `powercfg /energy` (ou o ClockRes da Sysinternals) mostra 0,5 ms enquanto o modo está ligado.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

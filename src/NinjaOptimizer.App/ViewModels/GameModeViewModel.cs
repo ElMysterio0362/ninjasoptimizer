@@ -81,6 +81,10 @@ public sealed partial class GameModeViewModel : ObservableObject
     private readonly IElevationService _elevation;
     private readonly OptimizeViewModel _optimize;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(3) };
+    private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+    private readonly IGameBoosts _boosts;
+    private readonly StandbyAutoPurge _purge = new();
+    private bool _purging;
     private bool _activatedByAuto;
     private bool _checking;
 
@@ -107,8 +111,10 @@ public sealed partial class GameModeViewModel : ObservableObject
     public bool HasUserGames => UserGames.Count > 0;
 
     public GameModeViewModel(GameModeService service, IProcessControl processes, AppSettings settings, SettingsStore store, DialogService dialogs, AppLog log,
-        OptimizationEngine engine, IElevationService elevation, OptimizeViewModel optimize)
+        OptimizationEngine engine, IElevationService elevation, OptimizeViewModel optimize, IGameBoosts boosts)
     {
+        _boosts = boosts;
+        _memoryTimer.Tick += async (_, _) => await PurgeTickAsync();
         _engine = engine;
         _elevation = elevation;
         _optimize = optimize;
@@ -141,6 +147,8 @@ public sealed partial class GameModeViewModel : ObservableObject
     public void Shutdown()
     {
         _timer.Stop();
+        _memoryTimer.Stop();
+        _boosts.SetHighResolutionTimer(false);
         try { if (_service.IsActive) _service.Deactivate(); }
         catch (Exception ex) { _log.Error("Desligar Modo Gamer", ex); }
     }
@@ -174,15 +182,73 @@ public sealed partial class GameModeViewModel : ObservableObject
         var name = game is null ? null : ProcessRules.Strip(game.Name);
         var paused = await Task.Run(() => _service.Activate(list, name, game?.Id));
         _log.Info($"Modo Gamer ligado ({name ?? "manual"}): {string.Join(", ", paused.Select(p => p.Name))}");
+        StartBoosts();
         UpdateStatus();
     }
 
     private async Task DeactivateCoreAsync()
     {
         var n = await Task.Run(_service.Deactivate);
+        StopBoosts();
         _activatedByAuto = false;
         _log.Info($"Modo Gamer desligado: {n} processo(s) retomado(s)");
         UpdateStatus();
+    }
+
+    // ───────── Durante o jogo (o que o ISLC fazia) ─────────
+    public bool AutoPurgeStandby
+    {
+        get => Gm.AutoPurgeStandby;
+        set { Gm.AutoPurgeStandby = value; Save(); OnPropertyChanged(); if (_service.IsActive) StartBoosts(); }
+    }
+    public int StandbyThresholdMb
+    {
+        get => Gm.StandbyThresholdMb;
+        set { Gm.StandbyThresholdMb = Math.Clamp(value, 128, 65536); Save(); OnPropertyChanged(); }
+    }
+    public int FreeThresholdMb
+    {
+        get => Gm.FreeThresholdMb;
+        set { Gm.FreeThresholdMb = Math.Clamp(value, 128, 65536); Save(); OnPropertyChanged(); }
+    }
+    public bool HighResolutionTimer
+    {
+        get => Gm.HighResolutionTimer;
+        set { Gm.HighResolutionTimer = value; Save(); OnPropertyChanged(); if (_service.IsActive) _boosts.SetHighResolutionTimer(value); }
+    }
+    public string PurgeConsequences => string.Join(" ", GameBoostTexts.PurgeConsequences);
+    public string TimerConsequences => string.Join(" ", GameBoostTexts.TimerConsequences);
+
+    /// <summary>No Windows 11 o timer só vale para o jogo com o ajuste "timer global" aplicado.</summary>
+    public string TimerHint => _engine.Context.Profile.WindowsBuild is >= 22000
+        && !_engine.Journal.ActiveEntries.Any(e => e.TweakId == "gaming.global-timer-resolution")
+        ? "No Windows 11, aplique também \"Permitir timer de alta resolução para o sistema todo\" em Otimizar → Jogos, senão o timer vale só para o NinjaOptimizer."
+        : "";
+
+    private void StartBoosts()
+    {
+        if (Gm.HighResolutionTimer && !_boosts.SetHighResolutionTimer(true)) _log.Info("Timer de alta resolução: o Windows recusou");
+        if (Gm.AutoPurgeStandby) _memoryTimer.Start(); else _memoryTimer.Stop();
+        OnPropertyChanged(nameof(TimerHint));
+    }
+
+    private void StopBoosts()
+    {
+        _memoryTimer.Stop();
+        _boosts.SetHighResolutionTimer(false);
+    }
+
+    private async Task PurgeTickAsync()
+    {
+        if (_purging || !_service.IsActive) return;
+        _purging = true;
+        try
+        {
+            if (await Task.Run(() => _purge.Tick(_boosts, Gm)))
+                _log.Info($"Modo Gamer: memória em espera limpa automaticamente ({_purge.Purges}ª vez)");
+        }
+        catch (Exception ex) { _log.Error("Limpeza automática da memória", ex); }
+        finally { _purging = false; }
     }
 
     [RelayCommand]

@@ -135,6 +135,41 @@
             </Border>
             <Border Style="{StaticResource Card}" Padding="20,18" Margin="0,16,0,0">
                 <StackPanel>
+                    <TextBlock Style="{StaticResource H3}" Text="Durante o jogo" />
+                    <DockPanel Margin="0,12,0,0">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding AutoPurgeStandby}" VerticalAlignment="Top"
+                                  Margin="12,0,0,0" AutomationProperties.Name="Limpar a memória em espera automaticamente" />
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="Limpar a memória em espera sozinho" TextWrapping="Wrap" />
+                            <TextBlock Style="{StaticResource Small}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"
+                                       Text="Verifica a cada 5 s só com o Modo Gamer ligado. Limpa quando os dois limites abaixo valem." />
+                            <TextBlock Style="{StaticResource Small}" FontSize="12" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,2,0,0" Text="{Binding PurgeConsequences}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="90" /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource Small}" VerticalAlignment="Center" Text="Em espera acima de (MB)" />
+                        <TextBox Grid.Column="1" Height="30" Margin="0,2" Text="{Binding StandbyThresholdMb, UpdateSourceTrigger=LostFocus}"
+                                 AutomationProperties.Name="Limite da memória em espera em MB" />
+                        <TextBlock Grid.Row="1" Style="{StaticResource Small}" VerticalAlignment="Center" Text="e livre abaixo de (MB)" />
+                        <TextBox Grid.Row="1" Grid.Column="1" Height="30" Margin="0,2" Text="{Binding FreeThresholdMb, UpdateSourceTrigger=LostFocus}"
+                                 AutomationProperties.Name="Limite da memória livre em MB" />
+                    </Grid>
+                    <DockPanel Margin="0,14,0,0">
+                        <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HighResolutionTimer}" VerticalAlignment="Top"
+                                  Margin="12,0,0,0" AutomationProperties.Name="Timer de alta resolução durante o jogo" />
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="Timer de alta resolução (0,5 ms)" TextWrapping="Wrap" />
+                            <TextBlock Style="{StaticResource Small}" FontSize="12" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,2,0,0" Text="{Binding TimerConsequences}" />
+                            <TextBlock Style="{StaticResource Small}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0" Text="{Binding TimerHint}"
+                                       Visibility="{Binding TimerHint, Converter={StaticResource EmptyToCollapsed}}" />
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Padding="20,18" Margin="0,16,0,0">
+                <StackPanel>
                     <TextBlock Style="{StaticResource H3}" Text="Prioridade de CPU" />
                     <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap" Margin="0,4,0,12"
                                Text="O Windows passa a abrir o jogo com mais prioridade que os outros programas. Vale na próxima vez que ele abrir. Ajuda em jogo limitado pela CPU." />

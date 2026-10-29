@@ -1128,5 +1128,28 @@ public static class TweakCatalog
                 new RegistryDeleteValueAction(RegHive.CurrentUser, @"Software\Policies\Microsoft\Windows\AppPrivacy", "LetAppsAccessMicrophone"),
             ],
         },
+
+        // ═════════════ Catálogo extra L · Timer global (Windows 11) ═════════════
+        new Tweak
+        {
+            Id = "gaming.global-timer-resolution",
+            Name = "Permitir timer de alta resolução para o sistema todo",
+            Description =
+                "No Windows 11, a resolução de timer que um programa pede só vale para ele mesmo. Este ajuste volta ao comportamento " +
+                "antigo: quando o Modo Gamer pede 0,5 ms, vale para o jogo também.",
+            Benefit = "Necessário para o \"Timer de alta resolução\" do Modo Gamer ter efeito no Windows 11.",
+            Category = TweakCategory.Gaming,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(),
+            Consequences =
+            [
+                "Mais consumo de energia e CPU um pouco mais ativa enquanto algum programa pede timer alto; em notebook a bateria dura menos.",
+                "O ganho de latência é pequeno e varia por jogo.",
+            ],
+            Conditions = [TweakCondition.MinWindowsBuild(22000)],
+            Actions = [LmDword(@"SYSTEM\CurrentControlSet\Control\Session Manager\kernel", "GlobalTimerResolutionRequests", 1)],
+        },
     ];
 }

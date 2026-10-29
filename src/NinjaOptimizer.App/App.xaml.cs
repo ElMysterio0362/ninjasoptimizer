@@ -157,6 +157,7 @@ public partial class App : Application
         s.AddSingleton<IProcessControl, WindowsProcessControl>();
         s.AddSingleton(sp => new GameModeService(sp.GetRequiredService<IProcessControl>(),
             Path.Combine(sp.GetRequiredService<IAppPaths>().DataFolder, "gamemode.json")));
+        s.AddSingleton<IGameBoosts, WindowsGameBoosts>();
         s.AddSingleton<GameModeViewModel>();
         s.AddSingleton<OptimizeViewModel>();
         s.AddSingleton<DashboardViewModel>();
