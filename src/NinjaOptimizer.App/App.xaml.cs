@@ -114,7 +114,8 @@ public partial class App : Application
         s.AddSingleton<LiveSensors>();
         s.AddSingleton(sp => new MaintenanceStore(Path.Combine(sp.GetRequiredService<IAppPaths>().DataFolder, "maintenance.json")));
         s.AddSingleton<IReadOnlyList<MaintenanceTask>>(sp => WindowsMaintenanceCatalog.Build(
-            sp.GetRequiredService<ICommandRunner>(), sp.GetRequiredService<IServiceManager>(), sp.GetRequiredService<IElevationService>()));
+            sp.GetRequiredService<ICommandRunner>(), sp.GetRequiredService<IServiceManager>(), sp.GetRequiredService<IElevationService>(),
+            sp.GetRequiredService<ChangeJournal>(), sp.GetRequiredService<IAppPaths>()));
         s.AddSingleton<CleanupViewModel>();
         s.AddSingleton(sp => new StartupManager(sp.GetRequiredService<IRegistryAccess>(), StartupFolders.Files));
         s.AddSingleton<StartupViewModel>();

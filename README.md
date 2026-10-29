@@ -8,7 +8,7 @@ Identidade visual: preto de base, roxo `#44088C` como lâmina, Sora + Inter. Vej
 
 **Stack:** C# / .NET 8 + WPF (MVVM) · LibreHardwareMonitor · WMI — veja a [decisão de stack](docs/01-decisao-de-stack.md).
 
-## Estado atual — Etapa 2 concluída + catálogo extra em andamento
+## Estado atual — Etapa 2 concluída + catálogo extra (A–F)
 
 | Módulo | Status |
 |---|---|
@@ -19,7 +19,7 @@ Identidade visual: preto de base, roxo `#44088C` como lâmina, Sora + Inter. Vej
 | Limpeza e manutenção, Inicialização | ✅ |
 | Modo Gamer (detecção de jogo, pausa de processos) | ✅ |
 | Segurança (ponto de restauração, backup .reg, journal, confirmação de risco alto, admin sob demanda) | ✅ |
-| Catálogo extra (análise do iGust Windows Boost) | em andamento — veja o roteiro |
+| Catálogo extra (análise do iGust Windows Boost): condições por hardware, novos ajustes, prioridade por jogo, reparos | ✅ A–F · G (Integridade de Memória) aguardando aprovação |
 | Benchmark | ✅ básico (CPU, memória, disco, histórico e comparação); GPU na Etapa 3 |
 | Overlay em jogos | Etapa 4 |
 | Gargalos e compatibilidade | Etapa 5 |

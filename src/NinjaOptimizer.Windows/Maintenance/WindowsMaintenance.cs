@@ -14,7 +14,8 @@ public static class WindowsMaintenanceCatalog
     private static string Windows => Environment.GetFolderPath(Environment.SpecialFolder.Windows);
     private static string LocalLow => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "LocalLow");
 
-    public static IReadOnlyList<MaintenanceTask> Build(ICommandRunner commands, IServiceManager services, IElevationService elevation) =>
+    public static IReadOnlyList<MaintenanceTask> Build(ICommandRunner commands, IServiceManager services, IElevationService elevation,
+        NinjaOptimizer.Core.Safety.ChangeJournal journal, IAppPaths paths) =>
     [
         new FolderCleanupTask("cleanup.temp", "Apagar arquivos temporários",
             "Apaga arquivos temporários do seu usuário e do Windows com mais de 1 dia. Arquivos em uso são pulados.",
@@ -43,7 +44,37 @@ public static class WindowsMaintenanceCatalog
         new DriveOptimizeTask(commands),
         new StandbyListTask(),
         new DnsFlushTask(commands),
+
+        // Reparos (catálogo extra F)
+        new RepairSystemFilesTask(commands, RunSfcAsync),
+        new RestartExplorerTask(elevation),
+        new RecentItemsTask(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "Windows", "Recent")),
+        new RepairWindowsUpdateTask(services, Path.Combine(Windows, "SoftwareDistribution"), Path.Combine(Environment.SystemDirectory, "catroot2")),
+        new RepairNetworkTask(commands, paths.LogFolder, () => JournalQueries.ActiveTweakIds(journal)),
+        new CheckDiskTask(commands, SystemDrive, () => new DriveInfo(SystemDrive).DriveFormat),
+        new RestartAudioTask(services),
+        new RestoreDefaultServicesTask(services, () => JournalQueries.ServicesChangedByApp(journal)),
+        new RepairStoreTask(commands, services, elevation, () => JournalQueries.ServicesChangedByApp(journal)),
     ];
+
+    private static string SystemDrive => (Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\")[..2];
+
+    /// <summary>O sfc escreve em UTF-16 (diferente das outras ferramentas); só o código de saída interessa.</summary>
+    private static async Task<int> RunSfcAsync(CancellationToken ct)
+    {
+        var psi = new ProcessStartInfo("sfc.exe", "/scannow")
+        {
+            UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardOutput = true, RedirectStandardError = true,
+            StandardOutputEncoding = System.Text.Encoding.Unicode, StandardErrorEncoding = System.Text.Encoding.Unicode,
+        };
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException("Não foi possível iniciar o sfc.");
+        var o = p.StandardOutput.ReadToEndAsync(ct);
+        var e = p.StandardError.ReadToEndAsync(ct);
+        await p.WaitForExitAsync(ct);
+        await Task.WhenAll(o, e);
+        return p.ExitCode;
+    }
 }
 
 internal sealed class RecycleBinTask : MaintenanceTask
@@ -263,5 +294,56 @@ internal sealed class DnsFlushTask(ICommandRunner commands) : MaintenanceTask
         return r.Success
             ? new MaintenanceResult(true, 0, "Cache de DNS limpo.")
             : new MaintenanceResult(false, 0, $"O Windows não limpou o cache de DNS (código {r.ExitCode}).");
+    }
+}
+
+/// <summary>F2: reinicia o Explorer da sua sessão e garante que ele volta sem elevação.</summary>
+internal sealed class RestartExplorerTask(IElevationService elevation) : MaintenanceTask
+{
+    public override string Id => "maintenance.restart-explorer";
+    public override string Name => "Reiniciar o Explorer";
+    public override string Description => "Fecha e abre de novo a barra de tarefas, o menu Iniciar e a área de trabalho. Corrige quando eles travam ou somem.";
+    public override TweakCategory Category => TweakCategory.SystemPrivacy;
+    public override string Note => "As janelas de pastas abertas são fechadas. Programas abertos não são afetados.";
+    public override string ActionText => "Reiniciar agora";
+
+    public override Task<MaintenanceResult> RunAsync(IProgress<string>? progress, CancellationToken ct) => Task.Run(async () =>
+    {
+        var session = Process.GetCurrentProcess().SessionId;
+        try
+        {
+            foreach (var p in Process.GetProcessesByName("explorer").Where(p => p.SessionId == session))
+            {
+                using (p)
+                {
+                    try { p.Kill(); p.WaitForExit(5000); } catch (InvalidOperationException) { } catch (Win32Exception) { }
+                }
+            }
+        }
+        finally
+        {
+            // O Windows reabre o Explorer sozinho (AutoRestartShell); se não reabrir em 5 s, abrimos nós.
+            for (var i = 0; i < 10 && !ExplorerRunning(session); i++) await Task.Delay(500, CancellationToken.None);
+            if (!ExplorerRunning(session)) StartUnelevated();
+        }
+        return ExplorerRunning(session)
+            ? new MaintenanceResult(true, 0, "Explorer reiniciado.")
+            : new MaintenanceResult(false, 0, "O Explorer não voltou sozinho. Aperte Ctrl+Shift+Esc → Executar nova tarefa → explorer.");
+    }, ct);
+
+    private static bool ExplorerRunning(int session)
+    {
+        var list = Process.GetProcessesByName("explorer");
+        try { return list.Any(p => p.SessionId == session); }
+        finally { foreach (var p in list) p.Dispose(); }
+    }
+
+    private void StartUnelevated()
+    {
+        // Iniciado direto de um app elevado, o Explorer abriria como administrador.
+        var psi = elevation.IsElevated
+            ? new ProcessStartInfo("runas.exe", "/trustlevel:0x20000 explorer.exe") { UseShellExecute = false, CreateNoWindow = true }
+            : new ProcessStartInfo("explorer.exe") { UseShellExecute = true };
+        try { Process.Start(psi)?.Dispose(); } catch (Win32Exception) { }
     }
 }

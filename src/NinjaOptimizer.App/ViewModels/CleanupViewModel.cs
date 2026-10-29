@@ -32,6 +32,15 @@ public sealed partial class CleanupItemViewModel(MaintenanceTask task) : Observa
         "maintenance.optimize-drives" => "Icon.Disk",
         "memory.standby-list" => "Icon.Memory",
         "maintenance.dns-flush" => "Icon.Network",
+        "maintenance.repair-system-files" => "Icon.Shield",
+        "maintenance.restart-explorer" => "Icon.Refresh",
+        "cleanup.recent-items" => "Icon.Clock",
+        "maintenance.repair-windows-update" => "Icon.Download",
+        "maintenance.repair-network" => "Icon.Network",
+        "maintenance.check-disk" => "Icon.Disk",
+        "maintenance.restart-audio" => "Icon.Refresh",
+        "maintenance.restore-default-services" => "Icon.Settings",
+        "maintenance.repair-store" => "Icon.Download",
         _ => "Icon.Settings",
     };
 
@@ -134,7 +143,22 @@ public sealed partial class CleanupViewModel : ObservableObject
             var title = !result.Success ? "Não deu para concluir"
                 : result.BytesFreed > 0 ? $"Pronto. Liberamos {Format.Bytes((ulong)result.BytesFreed)} {where}."
                 : "Pronto.";
-            _dialogs.Info(title, result.Message, kind: result.Success ? DialogKind.Success : DialogKind.Danger);
+            var message = result.Message + (result.RequiresRestart && !result.Message.Contains("Reinicie") ? " Reinicie o PC para terminar." : "");
+            if (result.FollowUp is { } next)
+            {
+                // Próximo passo opcional (ex.: corrigir o disco no próximo boot), sempre com confirmação.
+                if (_dialogs.Confirm(next.Title, message, [next.Message], DialogKind.Confirm, next.ConfirmText))
+                {
+                    var r2 = await next.Run(CancellationToken.None);
+                    _log.Info($"Manutenção {item.Task.Id} (passo seguinte): {r2.Success} · {r2.Message}");
+                    _store.Record(item.Task.Id, new MaintenanceStore.Entry(DateTimeOffset.Now, 0, r2.Success, r2.Message));
+                    _dialogs.Info(r2.Success ? "Pronto." : "Não deu para concluir", r2.Message, kind: r2.Success ? DialogKind.Success : DialogKind.Danger);
+                }
+            }
+            else
+            {
+                _dialogs.Info(title, message, kind: result.Success ? DialogKind.Success : DialogKind.Danger);
+            }
         }
         catch (Exception ex)
         {

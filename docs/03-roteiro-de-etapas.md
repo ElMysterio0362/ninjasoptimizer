@@ -240,6 +240,33 @@ Nova ação `NetAdapterPowerAction`: guarda o valor por `InterfaceGuid`; pula pl
 
 **Como testar no Windows (como administrador):** abra um jogo, vá em Modo Gamer → Prioridade de CPU e escolha "Acima do normal". Feche e abra o jogo: no Gerenciador de Tarefas → Detalhes → botão direito → Definir prioridade, aparece "Acima do normal". Volte para Normal (ou **Desfazer** no histórico de Otimizar): em `regedit`, `Image File Execution Options\<jogo>.exe` some se não existia antes.
 
+### ✅ F — Manutenção e reparos (aba Limpeza e manutenção)
+
+| Id | O que faz | Admin | Duração |
+|---|---|---|---|
+| `maintenance.repair-system-files` | `DISM /Online /Cleanup-Image /RestoreHealth` e depois `sfc /scannow`; resultado pelos códigos de saída (o sfc escreve em UTF-16) | sim | 10–30 min, precisa de internet |
+| `maintenance.restart-explorer` | encerra o `explorer.exe` da sessão; espera o Windows reabrir e, se não reabrir, abre sem elevação (`runas /trustlevel`) | não | segundos |
+| `cleanup.recent-items` | apaga só `*.lnk` do primeiro nível de `Recent` (nunca `AutomaticDestinations`: as pastas fixadas ficam) | não | segundos |
+| `maintenance.repair-windows-update` | para `wuauserv`/`bits`/`cryptsvc`, renomeia `SoftwareDistribution` e `catroot2` para `.bak-AAAAMMDD-HHMMSS`, religa os serviços sempre (mesmo se falhar); não muda o tipo de início | sim | ~1 min |
+| `maintenance.repair-network` | salva `ipconfig /all` no log, `netsh winsock reset`, `netsh int ip reset <log>`, `ipconfig /flushdns`; avisa se DNS/Nagle do app estão aplicados; pede reinício | sim | segundos |
+| `maintenance.check-disk` | `chkdsk <unidade do Windows> /scan` (online, só NTFS); código 3 oferece, com confirmação, a correção no próximo boot (`Repair-Volume -SpotFix`, que não depende de responder S/N traduzido) | sim | alguns minutos |
+| `maintenance.restart-audio` | para `Audiosrv` e `AudioEndpointBuilder`, volta Desativado para Automático, inicia `AudioEndpointBuilder` e `Audiosrv` | sim | segundos |
+| `maintenance.restore-default-services` | serviços essenciais **Desativados** voltam ao padrão (Bluetooth, Wi-Fi, DHCP, Netman, modo avião, áudio, BITS, Windows Update, câmera, Xbox); não toca nos que um ajuste ativo do app desativou | sim | segundos |
+| `maintenance.repair-store` | religa `BITS`/`wuauserv`/`ClipSVC`/`InstallService` se desativados (só como admin; sem admin avisa), `wsreset.exe` e re-registra só `Microsoft.WindowsStore` e `Microsoft.DesktopAppInstaller` do usuário atual | só p/ serviços | 1–2 min |
+
+- Infra: `MaintenanceResult.FollowUp` (próximo passo com confirmação) e `RequiresRestart`; `JournalQueries` (serviços mexidos e ajustes ativos no histórico).
+- **Em aberto:** `NlaSvc` ficou fora de "Restaurar serviços" porque o padrão no Windows 11 não foi confirmado.
+- O chkdsk `/scan` em pt-BR: o resultado vem do código de saída, não do texto.
+
+**Como testar no Windows (como administrador):**
+1. **Reiniciar o Explorer**: a barra de tarefas some e volta em poucos segundos; no Gerenciador de Tarefas → Detalhes, coluna "Elevado" = Não.
+2. **Limpar itens recentes**: o Acesso Rápido perde os recentes, mas as pastas fixadas continuam.
+3. **Verificar erros no disco**: termina em alguns minutos sem reiniciar.
+4. **Reiniciar o áudio**: o som some e volta.
+5. **Restaurar serviços**: desative o Bluetooth em `services.msc`, rode e confira que voltou para Manual.
+6. **Reparar a Store**: a Store abre no fim.
+7. **Reparar Windows Update / rede / arquivos do Windows**: confira as pastas `.bak-…` em `C:\Windows`, o arquivo `rede-antes-do-reparo-…txt` nos logs e o resumo do DISM/SFC.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

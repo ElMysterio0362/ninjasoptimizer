@@ -3,7 +3,15 @@ using NinjaOptimizer.Core.Optimization;
 
 namespace NinjaOptimizer.Core.Maintenance;
 
-public sealed record MaintenanceResult(bool Success, long BytesFreed, string Message);
+public sealed record MaintenanceResult(bool Success, long BytesFreed, string Message)
+{
+    /// <summary>Próximo passo opcional que o app oferece com confirmação (ex.: corrigir o disco no próximo boot).</summary>
+    public MaintenanceFollowUp? FollowUp { get; init; }
+    /// <summary>O Windows precisa reiniciar para terminar.</summary>
+    public bool RequiresRestart { get; init; }
+}
+
+public sealed record MaintenanceFollowUp(string Title, string Message, string ConfirmText, Func<CancellationToken, Task<MaintenanceResult>> Run);
 
 /// <summary>
 /// Ação de limpeza ou manutenção executada na hora ("Limpar agora"). Diferente dos ajustes, não tem
