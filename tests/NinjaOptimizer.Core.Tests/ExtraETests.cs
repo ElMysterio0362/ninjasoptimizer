@@ -155,6 +155,6 @@ public sealed class ConsequenceTests
         var t = TweakCatalog.Get("network.adapter-power-saving");
         Assert.Equal(t.Consequences.Count + 1, t.ConsequencesFor(true).Count);
         Assert.Equal(t.Consequences.Count, t.ConsequencesFor(false).Count);
-        Assert.Equal(t.Consequences.Count, t.ConsequencesFor(null).Count);
+        Assert.Equal(t.Consequences.Count, t.ConsequencesFor((bool?)null).Count);
     }
 }

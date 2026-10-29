@@ -17,6 +17,9 @@ public sealed record SystemProfile(
 {
     public static SystemProfile NotLoaded { get; } = new(false, DiskMediaType.Unknown, null, null, null);
 
+    /// <summary>Credential Guard rodando (Win32_DeviceGuard.SecurityServicesRunning contém 1). null = não deu para ler.</summary>
+    public bool? CredentialGuardRunning { get; init; }
+
     /// <summary>PCI Vendor ID (de "PCI\VEN_10DE&amp;DEV_…") → fabricante.</summary>
     public static GpuVendor? VendorFromPnpId(string pnpDeviceId)
     {
@@ -57,6 +60,53 @@ public abstract class TweakCondition
     public static TweakCondition HasGpuVendor(GpuVendor vendor) => new GpuVendorCondition(vendor);
     public static TweakCondition ServiceExists(string name) => new ServiceCondition(name);
     public static TweakCondition MinWindowsBuild(int build) => new BuildCondition(build);
+    public static TweakCondition MaxWindowsBuild(int build) => new MaxBuildCondition(build);
+    /// <summary>VBS/Integridade de Memória não imposto por política nem travado pelo firmware (UEFI).</summary>
+    public static TweakCondition DeviceGuardChangeable { get; } = new DeviceGuardCondition();
+    /// <summary>Credential Guard rodando e não travado pelo firmware.</summary>
+    public static TweakCondition CredentialGuardChangeable { get; } = new CredentialGuardCondition();
+
+    private sealed class MaxBuildCondition(int build) : TweakCondition
+    {
+        public override ConditionResult Check(SystemContext ctx)
+        {
+            if (!ctx.Profile.Loaded) return No(Checking);
+            if (ctx.Profile.WindowsBuild is not { } b) return No("Não foi possível confirmar a versão do Windows.");
+            return b <= build ? ConditionResult.Ok : No(build < 22000 ? "Só para Windows 10: no Windows 11 não tem efeito." : $"Só até o Windows build {build}.");
+        }
+    }
+
+    internal const string DeviceGuardPolicy = @"SOFTWARE\Policies\Microsoft\Windows\DeviceGuard";
+    internal const string DeviceGuardKey = @"SYSTEM\CurrentControlSet\Control\DeviceGuard";
+    internal const string HvciKey = DeviceGuardKey + @"\Scenarios\HypervisorEnforcedCodeIntegrity";
+    internal const string LsaKey = @"SYSTEM\CurrentControlSet\Control\Lsa";
+
+    private static bool Dword(SystemContext ctx, string key, string name, uint value) =>
+        ctx.Registry.GetValue(RegHive.LocalMachine, key, name) is { Data: uint v } && v == value;
+
+    private sealed class DeviceGuardCondition : TweakCondition
+    {
+        public override ConditionResult Check(SystemContext ctx)
+        {
+            if (ctx.Registry.GetValueNames(RegHive.LocalMachine, DeviceGuardPolicy).Count > 0)
+                return No("Imposto por uma política (empresa ou escola): mudar aqui não teria efeito.");
+            if (Dword(ctx, DeviceGuardKey, "Locked", 1) || Dword(ctx, HvciKey, "Locked", 1))
+                return No("Travado pelo firmware (UEFI): o Windows ignora a mudança no registro.");
+            return ConditionResult.Ok;
+        }
+    }
+
+    private sealed class CredentialGuardCondition : TweakCondition
+    {
+        public override ConditionResult Check(SystemContext ctx)
+        {
+            if (!ctx.Profile.Loaded) return No(Checking);
+            if (ctx.Profile.CredentialGuardRunning is not { } running) return No("Não foi possível confirmar se o Credential Guard está ligado.");
+            if (!running) return No("O Credential Guard não está ligado neste PC.");
+            if (Dword(ctx, LsaKey, "LsaCfgFlags", 1)) return No("Travado pelo firmware (UEFI): o Windows ignora a mudança no registro.");
+            return ConditionResult.Ok;
+        }
+    }
 
     private sealed class SsdCondition : TweakCondition
     {

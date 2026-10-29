@@ -18,7 +18,7 @@ public sealed class CatalogTests : IDisposable
         return d;
     }
 
-    private (OptimizationEngine Engine, FakeRegistry Reg, FakeServices Svc, FakePowerCfg Power) NewEngine()
+    private (OptimizationEngine Engine, FakeRegistry Reg, FakeServices Svc, FakePowerCfg Power) NewEngine(Tweak? tweak = null)
     {
         var reg = new FakeRegistry();
         var svc = new FakeServices();
@@ -27,6 +27,7 @@ public sealed class CatalogTests : IDisposable
         reg.SubKeys[$@"LocalMachine\{DnsServersAction.InterfacesKey}"] = [.. power.Adapters.Select(a => a.Guid)];
         // PC "que cumpre tudo": as condições são testadas à parte (ConditionTests)
         var ctx = new SystemContext(reg, svc, power) { Profile = Fakes.FullProfile };
+        if (tweak is not null) ctx.Profile = Fakes.ProfileFor(tweak, ctx);
         var engine = new OptimizationEngine(ctx,
             new ChangeJournal(Path.Combine(_paths.DataFolder, Guid.NewGuid() + ".json")),
             new FakeRestorePoint(), new FakeBackup(), new FakeElevation(), _paths);
@@ -40,8 +41,9 @@ public sealed class CatalogTests : IDisposable
     [MemberData(nameof(AllIds))]
     public async Task Every_tweak_applies_and_reverts_to_an_empty_registry(string id)
     {
-        var (engine, reg, svc, power) = NewEngine();
         var tweak = TweakCatalog.Get(id);
+        var (engine, reg, svc, power) = NewEngine(tweak);
+        var bcdBefore = new Dictionary<string, string>(power.Bcd);
         var activeBefore = power.Active;
         var settingsBefore = new Dictionary<string, uint>(power.Settings);
 
@@ -59,14 +61,15 @@ public sealed class CatalogTests : IDisposable
         Assert.All(power.Settings, kv => Assert.Equal(settingsBefore.GetValueOrDefault(kv.Key, 50u), kv.Value));
         Assert.True(power.MemoryCompression);
         Assert.True(power.Hibernate);
+        Assert.Equal(bcdBefore, power.Bcd);
     }
 
     [Theory]
     [MemberData(nameof(AllIds))]
     public async Task Every_tweak_restores_previous_values_exactly(string id)
     {
-        var (engine, reg, _, _) = NewEngine();
         var tweak = TweakCatalog.Get(id);
+        var (engine, reg, _, _) = NewEngine(tweak);
 
         // Valores pré-existentes diferentes do alvo, do mesmo tipo
         foreach (var a in tweak.Actions.OfType<RegistryValueAction>())
@@ -108,7 +111,8 @@ public sealed class CatalogTests : IDisposable
         Assert.All(TweakCatalog.All.Where(t => t.Risk == RiskLevel.High), t => Assert.Empty(t.Profiles));
         // Todo perfil tem ajustes, e todo ajuste fora de perfil é uma correção opcional explícita
         foreach (var p in Enum.GetValues<OptimizationProfile>()) Assert.NotEmpty(TweakCatalog.ForProfile(p));
-        Assert.All(TweakCatalog.All.Where(t => t.Profiles.Count == 0), t => Assert.True(t.Risk >= RiskLevel.Medium, t.Id));
+        Assert.All(TweakCatalog.All.Where(t => t.Profiles.Count == 0), t => Assert.True(t.Risk >= RiskLevel.Medium || t.ManualOnly, t.Id));
+        Assert.All(TweakCatalog.All.Where(t => t.ManualOnly), t => Assert.Empty(t.Profiles));
         // Risco Médio ou Alto nunca entra sem a lista de consequências (mostrada antes de aplicar)
         Assert.All(TweakCatalog.All.Where(t => t.Risk >= RiskLevel.Medium), t => Assert.True(t.Consequences.Count > 0, $"{t.Id} sem consequências"));
         Assert.All(TweakCatalog.All, t => Assert.DoesNotContain("!", string.Concat(t.Consequences)));

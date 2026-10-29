@@ -287,7 +287,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
             item.IsApplicable = cond.Applicable;
             item.NotApplicableReason = cond.Reason;
             item.WarningText = "";
-            item.Consequences = item.Tweak.ConsequencesFor(_engine.Context.Profile.IsPortable);
+            item.Consequences = item.Tweak.ConsequencesFor(_engine.Context);
             try { item.IsApplied = await Task.Run(() => _engine.IsAppliedAsync(item.Tweak)); }
             catch (Exception ex) { _log.Error($"Status de {item.Tweak.Id}", ex); }
         }
@@ -395,7 +395,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
                 ConfirmHighRisk = high => Task.FromResult(_dialogs.Confirm(
                     "Aplicar ajustes de risco alto?",
                     "Estes ajustes podem desativar recursos do Windows ou causar instabilidade. Continue só se souber o que fazem.",
-                    high.SelectMany(t => new[] { t.Name }.Concat(t.ConsequencesFor(_engine.Context.Profile.IsPortable).Select(c => "   • " + c))).ToList(),
+                    high.SelectMany(t => new[] { t.Name }.Concat(t.ConsequencesFor(_engine.Context).Select(c => "   • " + c))).ToList(),
                     DialogKind.Danger, "Aplicar mesmo assim", "Pular estes")),
             };
 

@@ -13,7 +13,18 @@ public static class SystemProfileProbe
         Try(SystemDriveType, DiskMediaType.Unknown),
         Try<bool?>(IsPortable, null),
         Try<IReadOnlySet<GpuVendor>?>(GpuVendors, null),
-        Try<int?>(Build, null)));
+        Try<int?>(Build, null))
+    {
+        CredentialGuardRunning = Try<bool?>(CredentialGuard, null),
+    });
+
+    /// <summary>Win32_DeviceGuard.SecurityServicesRunning: 1 = Credential Guard, 2 = Integridade de Memória.</summary>
+    private static bool? CredentialGuard()
+    {
+        var o = Query("SELECT SecurityServicesRunning FROM Win32_DeviceGuard", @"root\Microsoft\Windows\DeviceGuard").FirstOrDefault();
+        if (o is null) return null;
+        return o["SecurityServicesRunning"] is uint[] running ? running.Contains(1u) : false;
+    }
 
     private static T Try<T>(Func<T> f, T fallback)
     {

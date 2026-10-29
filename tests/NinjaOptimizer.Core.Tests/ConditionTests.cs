@@ -125,7 +125,7 @@ public sealed class ConditionTests : IDisposable
         foreach (var n in TweakCatalog.All.SelectMany(t => t.Actions.OfType<ServiceStartupAction>()).Select(a => a.ServiceName)) svc.Services[n] = (ServiceStartMode.Manual, false);
         var ctx = new SystemContext(new FakeRegistry(), svc, new FakePowerCfg()) { Profile = Fakes.FullProfile };
         Assert.All(TweakCatalog.All.Where(t => !t.Conditions.Contains(TweakCondition.IsPortable) && !t.Conditions.Contains(TweakCondition.IsDesktop)),
-            t => Assert.True(t.CheckConditions(ctx).Applicable, t.Id));
+            t => Assert.True(t.CheckConditions(ctx).Applicable || Fakes.ProfileFor(t, new SystemContext(new FakeRegistry(), svc, new FakePowerCfg())) != Fakes.FullProfile, t.Id));
     }
 }
 

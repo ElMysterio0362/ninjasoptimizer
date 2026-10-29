@@ -292,6 +292,26 @@ Nova aba **Otimizar → Apps do Windows**, fora de todos os perfis.
 
 **Como testar no Windows:** abra a aba, marque "Notícias" e "Clima", clique em Remover selecionados e leia o resumo. Confira que sumiram do Iniciar. No histórico de Ajustes, **Desfazer**: voltam (precisa de internet se não estiverem provisionados).
 
+### ✅ J — Ajustes de risco (todos fora dos perfis, com consequências)
+
+| Id | O que faz | Risco | Reinício | Condição |
+|---|---|---|---|---|
+| `security.memory-integrity-off` | `HypervisorEnforcedCodeIntegrity\Enabled=0` + `EnableVirtualizationBasedSecurity=0` | Alto | sim | bloqueia se imposto por política (`Policies\…\DeviceGuard`) ou travado por UEFI (`Locked=1`) |
+| `security.credential-guard-off` | `Lsa\LsaCfgFlags=0` | Alto | sim | só se rodando (`Win32_DeviceGuard`); bloqueia se `LsaCfgFlags=1` (UEFI) |
+| `security.hypervisor-off` | `bcdedit /set {current} hypervisorlaunchtype Off` | Alto | sim | — |
+| `services.biometrics-off` | `WbioSrvc` desativado | Médio | não | — |
+| `gaming.xbox-services-off` | `XblAuthManager`, `XblGameSave`, `XboxNetApiSvc`, `XboxGipSvc` desativados | Médio | não | — |
+| `privacy.cortana-off` | `AllowCortana=0` + `CortanaConsent=0` | Baixo | não | `MaxWindowsBuild(21999)` (só Windows 10) |
+| `system.taskbar-search-hidden` | `SearchboxTaskbarMode=0` | Baixo | não | — |
+| `disk.prefetcher-off` | `EnablePrefetcher=0` (não grava `EnableSuperfetch`) | Médio | sim | aviso extra se o Windows está num HD |
+| `compat.pca-off` | `PcaSvc` desativado + `DisablePCA=1` + `DisableInventory=1` | Médio | não | — |
+| `compat.engine-off` | `DisableEngine=1` | Alto | sim | — |
+| `update.block-internet-locations` | `DoNotConnectToWindowsUpdateInternetLocations=1` | Alto | não | aviso extra se não existe `WUServer` (PC sem WSUS) |
+
+- Infra nova: `BcdSettingAction` (lê `bcdedit /enum {current}`; reverte com `/set` do valor anterior ou `/deletevalue` se não existia; nome e valor só `[A-Za-z]+`); condições `MaxWindowsBuild`, `DeviceGuardChangeable`, `CredentialGuardChangeable`; `SystemProfile.CredentialGuardRunning`; `Tweak.ContextWarnings` (avisos que dependem do PC); `Tweak.ManualOnly` (risco baixo fora dos perfis de propósito: Cortana e pesquisa da barra).
+
+**Como testar no Windows (como administrador):** em Otimizar, os itens de risco alto mostram a caixa vermelha e só deixam selecionar depois de "Entendi as consequências". Aplique "Não carregar o hipervisor", rode `bcdedit /enum {current}` (aparece `hypervisorlaunchtype Off`), **Desfazer** e confira que voltou (ou sumiu, se não existia). Num PC com política de empresa, "Integridade de Memória" aparece bloqueada com o motivo.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

@@ -796,5 +796,219 @@ public static class TweakCatalog
             PortableWarning = "Neste notebook, a placa de rede vai gastar um pouco mais de bateria.",
             Actions = [new NetAdapterPowerAction()],
         },
+
+        // ═════════════ Catálogo extra J · Ajustes de risco (fora de todos os perfis) ═════════════
+        new Tweak
+        {
+            Id = "security.memory-integrity-off",
+            Name = "Desativar a Integridade de Memória (HVCI) e o VBS",
+            Description =
+                "Desliga a \"Integridade de Memória\" (Segurança do Windows → Segurança do dispositivo → Isolamento de núcleo) " +
+                "e a segurança baseada em virtualização. Reduz a proteção do Windows contra drivers maliciosos.",
+            Benefit = "Alguns % de FPS em CPUs mais antigas (antes de Intel 11ª geração e Ryzen 3000). Em CPU nova o ganho é quase nulo.",
+            Category = TweakCategory.Cpu,
+            Risk = RiskLevel.High,
+            Impact = ImpactLevel.Medium,
+            RequiresRestart = true,
+            Profiles = P(),
+            Consequences =
+            [
+                "O Windows fica mais exposto a drivers maliciosos e a ataques que usam falhas de driver.",
+                "A Segurança do Windows mostra um alerta amarelo.",
+                "Uma atualização do Windows pode religar sozinha (o item volta a aparecer como não aplicado).",
+            ],
+            Conditions = [TweakCondition.DeviceGuardChangeable],
+            Actions =
+            [
+                LmDword(@"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity", "Enabled", 0),
+                LmDword(@"SYSTEM\CurrentControlSet\Control\DeviceGuard", "EnableVirtualizationBasedSecurity", 0),
+            ],
+        },
+        new Tweak
+        {
+            Id = "security.credential-guard-off",
+            Name = "Desativar o Credential Guard",
+            Description = "Desliga a proteção que isola senhas e tokens de login da memória do Windows. Não aumenta o FPS: só libera o recurso.",
+            Benefit = "Quase nenhum ganho de desempenho. Útil só se o Credential Guard atrapalha algum programa (ex.: VPN ou Wi-Fi corporativo antigo).",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.High,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(),
+            Consequences =
+            [
+                "Senhas e tokens de login ficam menos protegidos contra programas que roubam credenciais da memória.",
+                "Em PC de empresa, pode violar a política de segurança.",
+            ],
+            Conditions = [TweakCondition.CredentialGuardChangeable],
+            Actions = [LmDword(@"SYSTEM\CurrentControlSet\Control\Lsa", "LsaCfgFlags", 0)],
+        },
+        new Tweak
+        {
+            Id = "security.hypervisor-off",
+            Name = "Não carregar o hipervisor do Windows",
+            Description = "O Windows deixa de iniciar o hipervisor no boot (bcdedit hypervisorlaunchtype off). Desliga junto o VBS e a Integridade de Memória.",
+            Benefit = "Pode dar alguns % de FPS em CPUs antigas e reduzir a latência em alguns jogos.",
+            Category = TweakCategory.Cpu,
+            Risk = RiskLevel.High,
+            Impact = ImpactLevel.Medium,
+            RequiresRestart = true,
+            Profiles = P(),
+            Consequences =
+            [
+                "WSL2, Hyper-V, Windows Sandbox, Docker Desktop e emuladores Android baseados em Hyper-V param de funcionar.",
+                "Desliga também o VBS e a Integridade de Memória.",
+                "Se o disco usa BitLocker, tenha a chave de recuperação à mão por precaução.",
+            ],
+            Actions = [new BcdSettingAction("hypervisorlaunchtype", "Off", "hipervisor desligado")],
+        },
+        new Tweak
+        {
+            Id = "services.biometrics-off",
+            Name = "Desativar o serviço de Biometria",
+            Description = "Desliga o serviço que lê digital e rosto (Windows Hello).",
+            Benefit = "Praticamente nenhum ganho de desempenho: o serviço só roda quando é usado.",
+            Category = TweakCategory.ProcessesServices,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences =
+            [
+                "O Windows Hello por digital ou rosto para de funcionar: você vai precisar do PIN ou da senha.",
+                "Ganho de desempenho praticamente nenhum (o serviço só roda quando é usado).",
+            ],
+            Actions = [new ServiceStartupAction("WbioSrvc", ServiceStartMode.Disabled)],
+        },
+        new Tweak
+        {
+            Id = "gaming.xbox-services-off",
+            Name = "Desativar os serviços Xbox",
+            Description = "Desliga login Xbox, saves na nuvem, rede Xbox e o serviço dos controles Xbox.",
+            Benefit = "Praticamente nenhum ganho: esses serviços só rodam quando algo os usa.",
+            Category = TweakCategory.Gaming,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences =
+            [
+                "Jogos do Game Pass e jogos que usam conta Xbox não entram na conta.",
+                "Saves na nuvem do Xbox param de sincronizar.",
+                "Controles e acessórios Xbox (atualização de firmware, botões extras) podem parar de funcionar.",
+                "Ganho de desempenho praticamente nenhum: esses serviços só rodam quando algo os usa.",
+            ],
+            Actions =
+            [
+                new ServiceStartupAction("XblAuthManager", ServiceStartMode.Disabled),
+                new ServiceStartupAction("XblGameSave", ServiceStartMode.Disabled),
+                new ServiceStartupAction("XboxNetApiSvc", ServiceStartMode.Disabled),
+                new ServiceStartupAction("XboxGipSvc", ServiceStartMode.Disabled),
+            ],
+        },
+        new Tweak
+        {
+            Id = "privacy.cortana-off",
+            Name = "Desativar a Cortana",
+            Description = "Desliga a Cortana pela política do Windows. Só tem efeito no Windows 10.",
+            Benefit = "Um assistente a menos em segundo plano e mais privacidade.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            ManualOnly = true,
+            Profiles = P(),
+            Consequences = ["A Cortana para de responder e some da barra de tarefas."],
+            Conditions = [TweakCondition.MaxWindowsBuild(21999)],
+            Actions =
+            [
+                LmDword(@"SOFTWARE\Policies\Microsoft\Windows\Windows Search", "AllowCortana", 0),
+                CuDword(@"Software\Microsoft\Windows\CurrentVersion\Search", "CortanaConsent", 0),
+            ],
+        },
+        new Tweak
+        {
+            Id = "system.taskbar-search-hidden",
+            Name = "Esconder a pesquisa da barra de tarefas",
+            Description = "Tira a caixa (ou o ícone) de pesquisa da barra de tarefas. A pesquisa continua: aperte a tecla Windows e digite.",
+            Benefit = "Só visual: mais espaço na barra. Não muda o desempenho.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            ManualOnly = true,
+            Profiles = P(),
+            Actions = [CuDword(@"Software\Microsoft\Windows\CurrentVersion\Search", "SearchboxTaskbarMode", 0)],
+        },
+        new Tweak
+        {
+            Id = "disk.prefetcher-off",
+            Name = "Desativar o Prefetch",
+            Description = "O Windows para de pré-carregar arquivos que costuma usar no boot e ao abrir programas.",
+            Benefit = "Só faz sentido para testar se o disco fica a 100% por causa disso.",
+            Category = TweakCategory.Disk,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(),
+            Consequences =
+            [
+                "O Windows e os programas tendem a abrir mais devagar, principalmente em HD.",
+                "Só faz sentido para testar se o disco fica a 100% por causa disso.",
+            ],
+            ContextWarnings = [new(c => c.Profile.SystemDriveType == Hardware.DiskMediaType.Hdd, "Seu Windows está num HD: lá o Prefetch é o que mais ajuda. Desligar costuma piorar.")],
+            Actions = [LmDword(@"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters", "EnablePrefetcher", 0)],
+        },
+        new Tweak
+        {
+            Id = "compat.pca-off",
+            Name = "Desativar o Assistente de Compatibilidade de Programas",
+            Description = "Desliga o serviço que observa programas antigos que falham e o inventário de compatibilidade.",
+            Benefit = "Um serviço a menos vigiando cada programa que abre.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Medium,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences = ["O Windows para de oferecer \"executar com configurações recomendadas\" quando um programa antigo falha ao instalar ou abrir."],
+            Actions =
+            [
+                new ServiceStartupAction("PcaSvc", ServiceStartMode.Disabled),
+                LmDword(@"SOFTWARE\Policies\Microsoft\Windows\AppCompat", "DisablePCA", 1),
+                LmDword(@"SOFTWARE\Policies\Microsoft\Windows\AppCompat", "DisableInventory", 1),
+            ],
+        },
+        new Tweak
+        {
+            Id = "compat.engine-off",
+            Name = "Desativar o motor de compatibilidade de aplicativos",
+            Description = "Desliga as correções automáticas que o Windows aplica em programas antigos.",
+            Benefit = "Programas abrem sem passar pelo motor de compatibilidade (ganho muito pequeno).",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.High,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(),
+            Consequences =
+            [
+                "Programas e jogos antigos que dependem das correções de compatibilidade do Windows podem parar de abrir ou travar.",
+                "Configurações feitas em Propriedades → Compatibilidade deixam de valer.",
+            ],
+            Actions = [LmDword(@"SOFTWARE\Policies\Microsoft\Windows\AppCompat", "DisableEngine", 1)],
+        },
+        new Tweak
+        {
+            Id = "update.block-internet-locations",
+            Name = "Impedir o Windows Update de usar servidores da internet",
+            Description =
+                "Política para PCs que recebem atualizações de um servidor da empresa (WSUS). Não é telemetria e não acelera o PC.",
+            Benefit = "Num PC com WSUS, garante que ele só atualiza pelo servidor da empresa.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.High,
+            Impact = ImpactLevel.Low,
+            Profiles = P(),
+            Consequences = ["A Microsoft Store e alguns downloads de recursos do Windows podem parar de funcionar."],
+            ContextWarnings =
+            [
+                new(c => c.Registry.GetValue(Abstractions.RegHive.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate", "WUServer") is null,
+                    "Este PC não usa WSUS: este ajuste quase não muda nada e pode quebrar a Store."),
+            ],
+            Actions = [LmDword(@"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate", "DoNotConnectToWindowsUpdateInternetLocations", 1)],
+        },
     ];
 }

@@ -84,6 +84,9 @@ internal sealed class FakePowerCfg : ICommandRunner
     public List<NetPowerState> NetPower { get; } = [new("{AAAA0000-0000-0000-0000-000000000001}", "Up", "Enabled")];
     public HashSet<string> RefuseNetPower { get; } = [];
 
+    /// <summary>Valores da entrada de boot atual (bcdedit).</summary>
+    public Dictionary<string, string> Bcd { get; } = new(StringComparer.OrdinalIgnoreCase) { ["hypervisorlaunchtype"] = "Auto" };
+
     /// <summary>Placas de rede conectadas (Get-NetAdapter).</summary>
     public List<(int Index, string Guid)> Adapters { get; } = [(12, "{AAAA0000-0000-0000-0000-000000000001}")];
 
@@ -126,6 +129,15 @@ internal sealed class FakePowerCfg : ICommandRunner
             return Task.FromResult(new CommandResult(1, "", "comando desconhecido"));
         }
         if (fileName == "ipconfig") return Task.FromResult(new CommandResult(0, "", ""));
+        if (fileName == "bcdedit")
+        {
+            var p = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (p[0] == "/enum")
+                return Task.FromResult(new CommandResult(0, "Carregador de Inicialização do Windows\r\n-------------------\r\nidentificador           {current}\r\n" +
+                    string.Concat(Bcd.Select(kv => $"{kv.Key,-24}{kv.Value}\r\n")), ""));
+            if (p[0] == "/set") { Bcd[p[2]] = p[3]; return Task.FromResult(new CommandResult(0, "", "")); }
+            if (p[0] == "/deletevalue") { Bcd.Remove(p[2]); return Task.FromResult(new CommandResult(0, "", "")); }
+        }
         if (fileName == "reg" && arguments.Contains("HibernateEnabled"))
             return Task.FromResult(new CommandResult(0,
                 $"\r\nHKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power\r\n    HibernateEnabled    REG_DWORD    0x{(Hibernate ? 1 : 0)}\r\n", ""));
@@ -202,7 +214,18 @@ internal sealed class TempPaths : IAppPaths, IDisposable
 internal static class Fakes
 {
     public static SystemProfile FullProfile { get; } = new(true, NinjaOptimizer.Core.Hardware.DiskMediaType.Ssd, false,
-        new HashSet<GpuVendor> { GpuVendor.Nvidia, GpuVendor.Amd, GpuVendor.Intel }, 22631);
+        new HashSet<GpuVendor> { GpuVendor.Nvidia, GpuVendor.Amd, GpuVendor.Intel }, 22631) { CredentialGuardRunning = true };
+
+    /// <summary>Perfil que cumpre as condições do ajuste (ex.: Windows 10 para os itens só do Windows 10).</summary>
+    public static SystemProfile ProfileFor(Tweak tweak, SystemContext ctx)
+    {
+        foreach (var p in new[] { FullProfile, FullProfile with { WindowsBuild = 19045 } })
+        {
+            ctx.Profile = p;
+            if (tweak.CheckConditions(ctx).Applicable) return p;
+        }
+        return FullProfile;
+    }
 }
 
 internal sealed record NetPowerState(string Guid, string Status, string Value);

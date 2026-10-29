@@ -48,6 +48,26 @@ public sealed class Tweak
     public IReadOnlyList<string> ConsequencesFor(bool? portable) =>
         portable == true && PortableWarning is { } w ? [.. Consequences, w] : Consequences;
 
+    /// <summary>Avisos que dependem do PC (ex.: "num HD o Prefetch é o que mais ajuda").</summary>
+    public IReadOnlyList<ContextWarning> ContextWarnings { get; init; } = [];
+
+    /// <summary>Consequências para este PC: as fixas + notebook + avisos que valem aqui.</summary>
+    public IReadOnlyList<string> ConsequencesFor(Abstractions.SystemContext ctx)
+    {
+        var list = ConsequencesFor(ctx.Profile.IsPortable).ToList();
+        foreach (var w in ContextWarnings)
+        {
+            try { if (w.Applies(ctx)) list.Add(w.Text); }
+            catch (Exception) { /* aviso não verificável: não mostra */ }
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// Fora dos perfis de propósito mesmo com risco baixo (preferência pessoal ou item novo que o usuário escolhe sozinho).
+    /// </summary>
+    public bool ManualOnly { get; init; }
+
     /// <summary>Aviso extra mostrado só em notebook (ex.: gasta mais bateria).</summary>
     public string? PortableWarning { get; init; }
 
@@ -108,3 +128,6 @@ public static class LabelsPt
         _ => p.ToString(),
     };
 }
+
+/// <summary>Aviso que só aparece quando vale para este PC.</summary>
+public sealed record ContextWarning(Func<Abstractions.SystemContext, bool> Applies, string Text);
