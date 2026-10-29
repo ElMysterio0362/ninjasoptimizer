@@ -128,3 +128,27 @@ public sealed class ConditionTests : IDisposable
             t => Assert.True(t.CheckConditions(ctx).Applicable, t.Id));
     }
 }
+
+public sealed class ExtraBTests : IDisposable
+{
+    private readonly TempPaths _paths = new();
+    public void Dispose() => _paths.Dispose();
+
+    [Theory]
+    [InlineData(new[] { GpuVendor.Amd }, true)]   // sem NVIDIA
+    [InlineData(new[] { GpuVendor.Nvidia }, false)] // NVIDIA, mas driver novo sem o serviço
+    public async Task Nvidia_telemetry_is_skipped_when_conditions_fail(GpuVendor[] gpus, bool serviceExists)
+    {
+        var svc = new FakeServices();
+        if (serviceExists) svc.Services["NvTelemetryContainer"] = (ServiceStartMode.Automatic, true);
+        var ctx = new SystemContext(new FakeRegistry(), svc, new FakePowerCfg())
+        {
+            Profile = new(true, DiskMediaType.Ssd, false, gpus.ToHashSet(), 22631),
+        };
+        var engine = new OptimizationEngine(ctx, new ChangeJournal(Path.Combine(_paths.DataFolder, "j.json")),
+            new FakeRestorePoint(), new FakeBackup(), new FakeElevation(), _paths);
+        var r = (await engine.ApplyAsync([TweakCatalog.Get("gpu.nvidia-telemetry")], new ApplyOptions())).Results.Single();
+        Assert.Equal(TweakOutcome.NotApplicable, r.Outcome);
+        if (serviceExists) Assert.Equal(ServiceStartMode.Automatic, svc.Services["NvTelemetryContainer"].Mode);
+    }
+}

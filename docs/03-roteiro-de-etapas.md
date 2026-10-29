@@ -195,6 +195,16 @@ Funcionalidades tiradas da engenharia reversa de um .bat de otimização (`otim-
 
 **Como testar no Windows:** num PC com o Windows num HD, "Desativar o SysMain" aparece bloqueado com o motivo; num SSD, normal. O log (`%LocalAppData%\NinjaOptimizer\logs`) mostra a linha "Perfil do PC: disco do Windows=…".
 
+### ✅ B — Serviços e privacidade
+
+| Id | O que faz | Perfis | Risco | Condições |
+|---|---|---|---|---|
+| `services.error-reporting` | `WerSvc` e `dmwappushservice` desativados + `Windows Error Reporting\Disabled=1` | Equilibrado, Máximo, Gamer | Baixo | — |
+| `privacy.app-launch-tracking` | `Start_TrackProgs=0` | todos | Baixo | — |
+| `gpu.nvidia-telemetry` | `NvTelemetryContainer` desativado | Máximo, Gamer | Baixo | GPU NVIDIA **e** serviço existe |
+
+**Como testar no Windows:** aplique os três (o da NVIDIA só fica disponível com driver antigo que tem o serviço; nos atuais aparece bloqueado com o motivo). Em `services.msc`, "Serviço de Relatório de Erros do Windows" fica Desativado. Clique em **Desfazer** no histórico: volta a Manual. Com o rastreio desligado, a seção "Mais usados" do Iniciar some.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

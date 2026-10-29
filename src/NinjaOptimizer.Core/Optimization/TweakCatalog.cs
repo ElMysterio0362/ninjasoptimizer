@@ -677,5 +677,54 @@ public static class TweakCatalog
             Profiles = P(),
             Actions = [new DnsServersAction(["1.1.1.1", "1.0.0.1"], "Cloudflare")],
         },
+
+        // ═════════════ Catálogo extra B · Serviços e privacidade ═════════════
+        new Tweak
+        {
+            Id = "services.error-reporting",
+            Name = "Desativar o Relatório de Erros do Windows",
+            Description =
+                "Quando um programa trava, o Windows deixa de gerar o relatório e de enviá-lo à Microsoft. O aviso " +
+                "\"o programa parou de funcionar\" continua aparecendo. Também desliga o serviço de mensagens WAP push, " +
+                "usado só em PCs gerenciados por empresa ou escola (Intune).",
+            Benefit = "Evita o WerFault.exe gastando CPU e disco depois de um travamento, e dá mais privacidade.",
+            Category = TweakCategory.ProcessesServices,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            Profiles = P(Balanced, MaxPerformance, Gamer),
+            Actions =
+            [
+                new ServiceStartupAction("WerSvc", ServiceStartMode.Disabled),
+                LmDword(@"SOFTWARE\Microsoft\Windows\Windows Error Reporting", "Disabled", 1),
+                new ServiceStartupAction("dmwappushservice", ServiceStartMode.Disabled),
+            ],
+        },
+        new Tweak
+        {
+            Id = "privacy.app-launch-tracking",
+            Name = "Não registrar os apps que você abre",
+            Description = "O Windows para de anotar quais programas você abre. A lista \"Mais usados\" do menu Iniciar fica vazia.",
+            Benefit = "Mais privacidade. Não muda o desempenho.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            Profiles = P(Safe, Balanced, MaxPerformance, Gamer),
+            Actions = [CuDword(ExplorerAdvanced, "Start_TrackProgs", 0)],
+        },
+        new Tweak
+        {
+            Id = "gpu.nvidia-telemetry",
+            Name = "Desativar a telemetria da NVIDIA",
+            Description =
+                "Desliga o serviço \"NVIDIA Telemetry Container\", que envia dados de uso à NVIDIA. O driver e o painel " +
+                "da NVIDIA continuam funcionando. Só aparece em drivers antigos que ainda têm esse serviço.",
+            Benefit = "Um processo a menos em segundo plano e mais privacidade.",
+            Category = TweakCategory.Gpu,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            Profiles = P(MaxPerformance, Gamer),
+            Conditions = [TweakCondition.HasGpuVendor(GpuVendor.Nvidia), TweakCondition.ServiceExists("NvTelemetryContainer")],
+            Actions = [new ServiceStartupAction("NvTelemetryContainer", ServiceStartMode.Disabled)],
+        },
     ];
 }
