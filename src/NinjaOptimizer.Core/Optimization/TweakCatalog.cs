@@ -726,5 +726,28 @@ public static class TweakCatalog
             Conditions = [TweakCondition.HasGpuVendor(GpuVendor.Nvidia), TweakCondition.ServiceExists("NvTelemetryContainer")],
             Actions = [new ServiceStartupAction("NvTelemetryContainer", ServiceStartMode.Disabled)],
         },
+
+        // ═════════════ Catálogo extra C · Visual ═════════════
+        new Tweak
+        {
+            Id = "system.visual-best-performance",
+            Name = "Efeitos visuais: melhor desempenho",
+            Description =
+                "Igual a \"Ajustar para obter um melhor desempenho\" nas Opções de desempenho do Windows: desliga sombras, " +
+                "animações de controles, conteúdo da janela ao arrastar e o esmaecer de menus e dicas. " +
+                "A suavização das fontes (ClearType) não muda. Vale depois de sair e entrar na conta.",
+            Benefit = "Interface mais leve, principalmente com vídeo integrado ou PC mais fraco.",
+            Category = TweakCategory.SystemPrivacy,
+            Risk = RiskLevel.Low,
+            Impact = ImpactLevel.Low,
+            RequiresRestart = true,
+            Profiles = P(MaxPerformance),
+            Actions =
+            [
+                CuDword(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", "VisualFXSetting", 2),
+                new RegistryValueAction(RegHive.CurrentUser, @"Control Panel\Desktop", "UserPreferencesMask",
+                    new RegValue(RegKind.Binary, new byte[] { 0x90, 0x12, 0x03, 0x80, 0x10, 0x00, 0x00, 0x00 })),
+            ],
+        },
     ];
 }

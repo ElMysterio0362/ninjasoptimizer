@@ -205,6 +205,16 @@ Funcionalidades tiradas da engenharia reversa de um .bat de otimização (`otim-
 
 **Como testar no Windows:** aplique os três (o da NVIDIA só fica disponível com driver antigo que tem o serviço; nos atuais aparece bloqueado com o motivo). Em `services.msc`, "Serviço de Relatório de Erros do Windows" fica Desativado. Clique em **Desfazer** no histórico: volta a Manual. Com o rastreio desligado, a seção "Mais usados" do Iniciar some.
 
+### ✅ C — Visual
+
+| Id | O que faz | Perfis | Risco | Reinício |
+|---|---|---|---|---|
+| `system.visual-best-performance` | `VisualEffects\VisualFXSetting=2` + `Control Panel\Desktop\UserPreferencesMask` = `90 12 03 80 10 00 00 00` (o binário original fica no snapshot) | Máximo | Baixo | sair e entrar na conta |
+
+Não grava `VisualFXSetting` em `Control Panel\Desktop` (placebo do .bat). Não conflita com `system.animations`.
+
+**Como testar no Windows:** aplique, saia e entre na conta: sem sombra sob as janelas e arrastar mostra só o contorno. Em `SystemPropertiesPerformance.exe` aparece "Ajustar para obter um melhor desempenho". **Desfazer** + sair/entrar volta exatamente ao que era.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 
