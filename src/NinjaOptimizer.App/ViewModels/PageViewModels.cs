@@ -175,7 +175,7 @@ public sealed partial class DashboardViewModel : ObservableObject
                     ? "Um segundo pente igual dobra a largura de banda" : "Atenção: confira os slots no manual da placa",
                 StatusKind.Warning, "Ver detalhes", new RelayCommand(() => Navigate?.Invoke("hardware"))));
 
-        foreach (var item in _optimize.AllItems.Where(i => !applied.Contains(i.Tweak.Id) && i.IsApplicable)
+        foreach (var item in _optimize.AllItems.Where(i => !applied.Contains(i.Tweak.Id) && i.IsApplicable && i.Tweak.Risk != RiskLevel.High)
                      .OrderByDescending(i => i.Tweak.Impact).ThenBy(i => i.Tweak.Risk).Take(4 - Recommendations.Count))
         {
             var tweak = item.Tweak;

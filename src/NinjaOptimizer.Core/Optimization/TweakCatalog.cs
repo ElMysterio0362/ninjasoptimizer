@@ -109,6 +109,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "cpu.ultimate-power-plan",
+            Consequences = ["Mais consumo de energia e temperatura; em notebook a bateria dura menos e a ventoinha gira mais."],
             Name = "Plano de energia Desempenho Máximo",
             Description =
                 "Cria e ativa o plano 'Desempenho Máximo' (Ultimate Performance), que mantém a CPU em " +
@@ -201,6 +202,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "system.background-apps",
+            Consequences = ["Apps da Store (Telefone, Email, Teams da Store) param de mostrar notificações e de sincronizar até serem abertos."],
             Name = "Impedir apps da Microsoft Store em segundo plano",
             Description =
                 "Apps da Store (como Fotos, Clima e Notícias) deixam de rodar quando estão fechados. " +
@@ -300,6 +302,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "gaming.fullscreen-optimizations",
+            Consequences = ["HDR automático, sobreposições do Windows e a troca rápida com Alt+Tab podem parar de funcionar em alguns jogos."],
             Name = "Desativar otimizações de tela cheia",
             Description =
                 "Jogos em tela cheia passam a usar o modo exclusivo tradicional, sem a camada do Windows por cima. " +
@@ -417,6 +420,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "gpu.hags",
+            Consequences = ["Em poucos jogos antigos e alguns programas de captura pode causar engasgos ou tela preta.", "Só vale depois de reiniciar."],
             Name = "Ativar agendamento de GPU acelerado por hardware",
             Description =
                 "A própria placa de vídeo organiza a fila de trabalho, em vez do processador. Exige placa e driver " +
@@ -460,6 +464,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "gpu.mpo-off",
+            Consequences = ["Em vídeos e no navegador o uso da placa de vídeo pode subir um pouco.", "Em versões recentes do Windows pode não ter efeito."],
             Name = "Desativar o MPO (corrige tela piscando)",
             Description =
                 "Desliga as \"sobreposições multiplano\" do Windows. Use só se você vê tela piscando, travadinhas no " +
@@ -505,6 +510,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "storage.hibernation-off",
+            Consequences = ["O PC deixa de hibernar e a Inicialização Rápida é desligada: ligar o PC do zero fica um pouco mais lento."],
             Name = "Desativar a hibernação",
             Description =
                 "Apaga o arquivo de hibernação, que ocupa no disco quase o tamanho da sua RAM. " +
@@ -526,6 +532,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "memory.pagefile-auto",
+            Consequences = ["Substitui o tamanho do arquivo de paginação que você configurou à mão."],
             Name = "Deixar o Windows gerenciar o arquivo de paginação",
             Description =
                 "Volta o arquivo de paginação para o tamanho automático na unidade do Windows. Use se você o desativou " +
@@ -542,6 +549,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "memory.compression-off",
+            Consequences = ["Com menos de 32 GB de RAM o Windows pode usar mais o disco e ficar mais lento."],
             Name = "Desativar a compressão de memória",
             Description =
                 "O Windows para de comprimir páginas da RAM para caber mais coisa nela. Só vale a pena com 32 GB ou mais: " +
@@ -586,6 +594,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "services.sysmain",
+            Consequences = ["Programas podem abrir um pouco mais devagar nas primeiras vezes."],
             Name = "Desativar o SysMain (Superfetch)",
             Description =
                 "O SysMain pré-carrega na RAM os programas que você mais usa. Em SSD rápido o ganho dele é pequeno, " +
@@ -601,6 +610,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "services.search-indexer",
+            Consequences = ["A busca do Iniciar e do Explorador fica mais lenta e pode não achar o conteúdo dentro de arquivos e e-mails do Outlook."],
             Name = "Desativar a indexação de pesquisa",
             Description =
                 "Para o serviço Windows Search, que fica lendo seus arquivos para acelerar buscas. " +
@@ -615,6 +625,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "services.print-spooler",
+            Consequences = ["Nenhuma impressora funciona, nem \"Imprimir em PDF\"."],
             Name = "Desativar o serviço de impressão",
             Description =
                 "Desliga o Spooler de Impressão. Só faça isso se você não usa impressora (nem \"Imprimir em PDF\").",
@@ -668,6 +679,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "network.dns-cloudflare",
+            Consequences = ["Em rede de empresa ou escola, sites e pastas internas podem parar de abrir."],
             Name = "Usar DNS rápido (Cloudflare 1.1.1.1)",
             Description =
                 "Troca o DNS das placas conectadas para 1.1.1.1 e 1.0.0.1. Ao reverter, volta exatamente ao DNS que " +
@@ -684,6 +696,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "services.error-reporting",
+            Consequences = ["A Microsoft e os desenvolvedores deixam de receber relatórios de travamento; soluções automáticas para travamentos param de aparecer."],
             Name = "Desativar o Relatório de Erros do Windows",
             Description =
                 "Quando um programa trava, o Windows deixa de gerar o relatório e de enviá-lo à Microsoft. O aviso " +
@@ -770,6 +783,7 @@ public static class TweakCatalog
         new Tweak
         {
             Id = "network.adapter-power-saving",
+            Consequences = ["A internet cai por alguns segundos enquanto a placa reinicia."],
             Name = "Não desligar a placa de rede para economizar",
             Description =
                 "Desmarca \"Permitir que o computador desligue este dispositivo para economizar energia\" nas placas de rede " +

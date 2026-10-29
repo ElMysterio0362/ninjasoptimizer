@@ -127,8 +127,13 @@ public sealed partial class CleanupViewModel : ObservableObject
 
         var details = new List<string> { item.Description };
         if (item.Note is not null) details.Add("Atenção: " + item.Note);
+        if (item.Task.Consequences.Count > 0)
+        {
+            details.Add("O que pode acontecer:");
+            details.AddRange(item.Task.Consequences.Select(c => "   • " + c));
+        }
         if (!_dialogs.Confirm($"{item.Name}?", $"Isso não tem como desfazer. Leva {item.Task.Duration}.", details,
-                item.Note is null ? DialogKind.Confirm : DialogKind.Danger, item.ActionText))
+                item.Note is null && item.Task.Consequences.Count == 0 ? DialogKind.Confirm : DialogKind.Danger, item.ActionText))
             return;
 
         IsBusy = true;

@@ -16,6 +16,8 @@ $publish = Join-Path $root "artifacts/publish"
 
 Write-Host "==> Testes" -ForegroundColor Magenta
 dotnet test "$root/tests/NinjaOptimizer.Core.Tests" -c $Configuration
+if ($LASTEXITCODE -ne 0) { throw "Testes do núcleo falharam" }
+dotnet test "$root/tests/NinjaOptimizer.Windows.Tests" -c $Configuration
 if ($LASTEXITCODE) { throw "Testes falharam" }
 
 Write-Host "==> Publicando" -ForegroundColor Magenta

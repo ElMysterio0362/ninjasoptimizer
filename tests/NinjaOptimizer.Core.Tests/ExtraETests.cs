@@ -139,3 +139,22 @@ public sealed class GamePriorityEngineTests : IDisposable
         Assert.DoesNotContain("javaw", NinjaOptimizer.Core.GameMode.ProcessRules.KnownGames);
     }
 }
+
+public sealed class ConsequenceTests
+{
+    [Fact]
+    public void Game_priority_always_has_consequences_and_core_repairs_too()
+    {
+        Assert.NotEmpty(GamePriority.Create("a.exe", CpuPriority.AboveNormal).Consequences);
+        Assert.Contains("Discord", string.Concat(GamePriority.Create("a.exe", CpuPriority.High).Consequences));
+    }
+
+    [Fact]
+    public void Portable_warning_is_added_only_on_notebooks()
+    {
+        var t = TweakCatalog.Get("network.adapter-power-saving");
+        Assert.Equal(t.Consequences.Count + 1, t.ConsequencesFor(true).Count);
+        Assert.Equal(t.Consequences.Count, t.ConsequencesFor(false).Count);
+        Assert.Equal(t.Consequences.Count, t.ConsequencesFor(null).Count);
+    }
+}

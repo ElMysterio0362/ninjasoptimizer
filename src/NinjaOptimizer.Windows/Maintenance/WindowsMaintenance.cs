@@ -21,7 +21,8 @@ public static class WindowsMaintenanceCatalog
             "Apaga arquivos temporários do seu usuário e do Windows com mais de 1 dia. Arquivos em uso são pulados.",
             TweakCategory.Disk,
             () => elevation.IsElevated ? [Path.GetTempPath(), Path.Combine(Windows, "Temp")] : [Path.GetTempPath()],
-            TimeSpan.FromDays(1)),
+            TimeSpan.FromDays(1),
+            consequences: ["Os arquivos apagados não vão para a Lixeira: não dá para recuperar."]),
 
         new RecycleBinTask(),
 
@@ -37,7 +38,8 @@ public static class WindowsMaintenanceCatalog
                 Path.Combine(LocalLow, "Intel", "ShaderCache"),
             ],
             TimeSpan.Zero,
-            note: "Na primeira vez que você abrir cada jogo, ele recompila os shaders e pode engasgar por alguns minutos."),
+            note: "Na primeira vez que você abrir cada jogo, ele recompila os shaders e pode engasgar por alguns minutos.",
+            consequences: ["Cada jogo recompila os shaders na primeira abertura e pode engasgar ou demorar a carregar por alguns minutos."]),
 
         new WindowsUpdateCacheTask(services),
         new ComponentCleanupTask(commands),
@@ -79,6 +81,7 @@ public static class WindowsMaintenanceCatalog
 
 internal sealed class RecycleBinTask : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["Os arquivos da Lixeira são apagados para sempre."];
     public override string Id => "cleanup.recycle-bin";
     public override string Name => "Esvaziar a Lixeira";
     public override string Description => "Apaga de vez os arquivos que estão na Lixeira, em todas as unidades.";
@@ -117,6 +120,7 @@ internal sealed class RecycleBinTask : MaintenanceTask
 
 internal sealed class WindowsUpdateCacheTask(IServiceManager services) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["Uma atualização baixada e ainda não instalada será baixada de novo.", "O Windows Update fica pausado por alguns segundos."];
     private static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SoftwareDistribution", "Download");
     private static readonly string[] UpdateServices = ["wuauserv", "bits"];
 
@@ -153,6 +157,7 @@ internal sealed class WindowsUpdateCacheTask(IServiceManager services) : Mainten
 
 internal sealed class ComponentCleanupTask(ICommandRunner commands) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["Não dá mais para desinstalar atualizações do Windows que já foram instaladas."];
     public override string Id => "cleanup.components";
     public override string Name => "Limpar componentes antigos do Windows";
     public override string Description => "Remove versões antigas de componentes que ficaram para trás depois das atualizações (DISM).";
@@ -178,6 +183,7 @@ internal sealed class ComponentCleanupTask(ICommandRunner commands) : Maintenanc
 
 internal sealed class DriveOptimizeTask(ICommandRunner commands) : MaintenanceTask
 {
+    public override bool HasSideEffects => false;
     public override string Id => "maintenance.optimize-drives";
     public override string Name => "Otimizar unidades (TRIM e desfragmentação)";
     public override string Description => "Envia o TRIM para os SSDs e desfragmenta os HDDs, do mesmo jeito que a ferramenta \"Otimizar unidades\" do Windows.";
@@ -199,6 +205,7 @@ internal sealed class DriveOptimizeTask(ICommandRunner commands) : MaintenanceTa
 /// <summary>Esvazia a lista de memória em espera (cache de arquivos na RAM) via NtSetSystemInformation.</summary>
 internal sealed class StandbyListTask : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["Arquivos e programas usados há pouco recarregam do disco: podem abrir um pouco mais devagar na próxima vez."];
     public override string Id => "memory.standby-list";
     public override string Name => "Liberar memória em espera";
     public override string Description =>
@@ -281,6 +288,7 @@ internal sealed class StandbyListTask : MaintenanceTask
 
 internal sealed class DnsFlushTask(ICommandRunner commands) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["Os primeiros sites que você abrir depois demoram uma fração de segundo a mais."];
     public override string Id => "maintenance.dns-flush";
     public override string Name => "Limpar cache de DNS";
     public override string Description => "Esquece os endereços de sites guardados. Resolve sites que não abrem depois de mudarem de servidor ou de trocar o DNS.";
@@ -300,6 +308,7 @@ internal sealed class DnsFlushTask(ICommandRunner commands) : MaintenanceTask
 /// <summary>F2: reinicia o Explorer da sua sessão e garante que ele volta sem elevação.</summary>
 internal sealed class RestartExplorerTask(IElevationService elevation) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["A barra de tarefas e a área de trabalho somem por alguns segundos.", "As janelas de pastas abertas são fechadas."];
     public override string Id => "maintenance.restart-explorer";
     public override string Name => "Reiniciar o Explorer";
     public override string Description => "Fecha e abre de novo a barra de tarefas, o menu Iniciar e a área de trabalho. Corrige quando eles travam ou somem.";

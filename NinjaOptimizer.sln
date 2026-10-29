@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{BDDAA5F6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NinjaOptimizer.Core.Tests", "tests\NinjaOptimizer.Core.Tests\NinjaOptimizer.Core.Tests.csproj", "{93486FE8-D540-41B4-A523-8006CFA63AEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NinjaOptimizer.Windows.Tests", "tests\NinjaOptimizer.Windows.Tests\NinjaOptimizer.Windows.Tests.csproj", "{69504F91-ADA9-4D2A-AB22-410757B92F16}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,11 +42,16 @@ Global
 		{93486FE8-D540-41B4-A523-8006CFA63AEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93486FE8-D540-41B4-A523-8006CFA63AEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93486FE8-D540-41B4-A523-8006CFA63AEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69504F91-ADA9-4D2A-AB22-410757B92F16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69504F91-ADA9-4D2A-AB22-410757B92F16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69504F91-ADA9-4D2A-AB22-410757B92F16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69504F91-ADA9-4D2A-AB22-410757B92F16}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C73D5572-99EE-47D2-A51F-FF08F2AAC839} = {01477720-D4C8-4EBB-808D-C0635DF05194}
 		{0DEBF9FB-1C2A-4998-814C-31DD5DCF5C22} = {01477720-D4C8-4EBB-808D-C0635DF05194}
 		{D7DBFB0B-72C9-4027-9BC9-15B667C0CECA} = {01477720-D4C8-4EBB-808D-C0635DF05194}
 		{93486FE8-D540-41B4-A523-8006CFA63AEF} = {BDDAA5F6-67AB-49E9-A96D-3EBF68541FCE}
+		{69504F91-ADA9-4D2A-AB22-410757B92F16} = {BDDAA5F6-67AB-49E9-A96D-3EBF68541FCE}
 	EndGlobalSection
 EndGlobal

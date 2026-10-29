@@ -60,6 +60,7 @@ public static class DefaultServices
 /// <summary>F1: DISM /RestoreHealth e depois sfc /scannow.</summary>
 public sealed class RepairSystemFilesTask(ICommandRunner commands, Func<CancellationToken, Task<int>> runSfc) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["O PC fica mais lento enquanto a verificação roda.", "Arquivos do Windows corrompidos são trocados por cópias originais: mudanças feitas à mão em arquivos do sistema se perdem."];
     public override string Id => "maintenance.repair-system-files";
     public override string Name => "Verificar e reparar arquivos do Windows";
     public override string Description => "Confere os arquivos do Windows e troca os corrompidos por cópias boas (DISM e SFC). Útil quando o Windows dá erros estranhos ou trava.";
@@ -96,6 +97,7 @@ public sealed class RepairSystemFilesTask(ICommandRunner commands, Func<Cancella
 /// <summary>F3: apaga só os atalhos do primeiro nível da pasta Recentes (nunca AutomaticDestinations).</summary>
 public sealed class RecentItemsTask(string recentFolder) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["A lista de arquivos recentes do Acesso Rápido e do Iniciar é apagada sem volta."];
     public override string Id => "cleanup.recent-items";
     public override string Name => "Limpar a lista de itens recentes";
     public override string Description => "Apaga a lista de arquivos abertos recentemente.";
@@ -125,6 +127,7 @@ public sealed class RecentItemsTask(string recentFolder) : MaintenanceTask
 /// <summary>F4: renomeia SoftwareDistribution e catroot2 com data e hora e religa os serviços.</summary>
 public sealed class RepairWindowsUpdateTask(IServiceManager services, string softwareDistribution, string catroot2, TimeProvider? time = null) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["O histórico do Windows Update fica vazio.", "Atualizações baixadas e ainda não instaladas são baixadas de novo."];
     private static readonly string[] Services = ["wuauserv", "bits", "cryptsvc"];
 
     public override string Id => "maintenance.repair-windows-update";
@@ -172,6 +175,7 @@ public sealed class RepairWindowsUpdateTask(IServiceManager services, string sof
 /// <summary>F5: winsock reset, ip reset e flush de DNS, salvando antes a configuração atual no log.</summary>
 public sealed class RepairNetworkTask(ICommandRunner commands, string logFolder, Func<IReadOnlySet<string>> activeTweakIds) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["Apaga IP fixo e DNS configurados à mão.", "Pode remover filtros antigos de VPN ou antivírus.", "Precisa reiniciar o PC para a internet voltar ao normal."];
     public override string Id => "maintenance.repair-network";
     public override string Name => "Reparar a rede";
     public override string Description => "Reinstala as configurações de rede do Windows do zero (Winsock e TCP/IP) e limpa o cache de DNS. Use só se a internet não funciona.";
@@ -221,6 +225,7 @@ public sealed class RepairNetworkTask(ICommandRunner commands, string logFolder,
 /// <summary>F6: chkdsk /scan (online). Com erro que precisa de correção offline, oferece /spotfix.</summary>
 public sealed class CheckDiskTask(ICommandRunner commands, string drive, Func<string?> fileSystem) : MaintenanceTask
 {
+    public override bool HasSideEffects => false;
     // Só "C:" e afins entram nos comandos.
     private readonly string drive = drive is [var l, ':'] && char.IsAsciiLetter(l) ? drive.ToUpperInvariant()
         : throw new ArgumentException("Unidade inválida.", nameof(drive));
@@ -266,6 +271,7 @@ public sealed class CheckDiskTask(ICommandRunner commands, string drive, Func<st
 /// <summary>F7: reinicia Audiosrv e AudioEndpointBuilder na ordem certa.</summary>
 public sealed class RestartAudioTask(IServiceManager services) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["O som some por alguns segundos, inclusive em chamadas em andamento."];
     public override string Id => "maintenance.restart-audio";
     public override string Name => "Reiniciar o áudio do Windows";
     public override string Description => "Reinicia os serviços de áudio. Corrige \"nenhum dispositivo de saída de áudio instalado\" e som que parou do nada.";
@@ -296,6 +302,7 @@ public sealed class RestartAudioTask(IServiceManager services) : MaintenanceTask
 /// <summary>F8: serviços essenciais desativados voltam ao padrão do Windows.</summary>
 public sealed class RestoreDefaultServicesTask(IServiceManager services, Func<IReadOnlySet<string>> disabledByApp) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["Serviços que você desativou de propósito por fora do app (ex.: Bluetooth) voltam a ligar."];
     public override string Id => "maintenance.restore-default-services";
     public override string Name => "Restaurar serviços essenciais ao padrão";
     public override string Description =>
@@ -317,6 +324,7 @@ public sealed class RestoreDefaultServicesTask(IServiceManager services, Func<IR
 /// <summary>F9: serviços da Store, wsreset e re-registro só da Store e do Instalador de Aplicativos do usuário atual.</summary>
 public sealed class RepairStoreTask(ICommandRunner commands, IServiceManager services, IElevationService elevation, Func<IReadOnlySet<string>> disabledByApp) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => ["O cache da Store é apagado: a primeira abertura fica mais lenta.", "A Store abre sozinha no fim."];
     internal const string Reregister =
         "-NoProfile -NonInteractive -Command \"foreach ($n in 'Microsoft.WindowsStore','Microsoft.DesktopAppInstaller') { " +
         "Get-AppxPackage $n | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register \\\"$($_.InstallLocation)\\AppXManifest.xml\\\" } }\"";

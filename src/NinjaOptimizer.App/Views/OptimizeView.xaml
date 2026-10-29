@@ -31,7 +31,7 @@
 
                     <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" VerticalAlignment="Center" Margin="16,0,0,0"
                               IsChecked="{Binding IsSelected, Mode=TwoWay}" AutomationProperties.Name="{Binding Name}"
-                              IsEnabled="{Binding IsApplicable}" ToolTip="Selecionar para aplicar" ToolTipService.ShowOnDisabled="True" />
+                              IsEnabled="{Binding CanSelect}" ToolTip="Selecionar para aplicar" ToolTipService.ShowOnDisabled="True" />
 
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Style="{StaticResource KindPill}" Tag="{Binding AppliedKind}" Margin="8,0,0,0" Visibility="{Binding IsApplied, Converter={StaticResource BoolToVis}}">
@@ -56,6 +56,50 @@
                         <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
                         <TextBlock Style="{StaticResource Small}" LineHeight="18" Text="{Binding Description}" Margin="0,2,0,0" />
                         <TextBlock Style="{StaticResource Small}" FontSize="12" Foreground="{StaticResource AccentTextBrush}" Text="{Binding Benefit}" Margin="0,4,0,0" />
+                        <!-- Consequências: Baixo = expansível · Médio = caixa amarela · Alto = caixa vermelha + "Entendi" -->
+                        <StackPanel Visibility="{Binding ShowLowDetails, Converter={StaticResource BoolToVis}}" Margin="0,6,0,0">
+                            <ToggleButton IsChecked="{Binding DetailsOpen}" Cursor="Hand" HorizontalAlignment="Left" Focusable="True"
+                                          AutomationProperties.Name="O que muda">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <TextBlock x:Name="T" Text="O que muda ▸" FontSize="12" Foreground="{StaticResource TextMutedBrush}" />
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="T" Property="Text" Value="O que muda ▾" /></Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="T" Property="Foreground" Value="{StaticResource TextBrush}" /></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ItemsControl ItemsSource="{Binding Consequences}" Margin="0,4,0,0" Visibility="{Binding DetailsOpen, Converter={StaticResource BoolToVis}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate><TextBlock Style="{StaticResource Small}" FontSize="12" TextWrapping="Wrap" Text="{Binding StringFormat='• {0}'}" /></DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                        <Border Visibility="{Binding ShowMediumBox, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0" Padding="12,8" CornerRadius="12"
+                                Background="{StaticResource WarningSoftBrush}" BorderBrush="{StaticResource WarningBorderBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Antes de aplicar" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource WarningTextBrush}" />
+                                <ItemsControl ItemsSource="{Binding Consequences}" Margin="0,2,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate><TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource WarningTextBrush}" Text="{Binding StringFormat='• {0}'}" Margin="0,2,0,0" /></DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                        <Border Visibility="{Binding ShowHighBox, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0" Padding="12,8" CornerRadius="12"
+                                Background="{StaticResource DangerSoftBrush}" BorderBrush="{StaticResource DangerBorderBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Risco alto · leia antes" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource DangerTextBrush}" />
+                                <ItemsControl ItemsSource="{Binding Consequences}" Margin="0,2,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate><TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource DangerTextBrush}" Text="{Binding StringFormat='• {0}'}" Margin="0,2,0,0" /></DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <CheckBox IsChecked="{Binding IsAcknowledged}" Margin="0,8,0,0" Foreground="{StaticResource DangerTextBrush}" FontSize="12" FontWeight="SemiBold"
+                                          Content="Entendi as consequências" IsEnabled="{Binding IsApplicable}" />
+                            </StackPanel>
+                        </Border>
                         <TextBlock Style="{StaticResource Small}" FontSize="12" Foreground="{StaticResource WarningBrush}" Text="{Binding WarningText}" Margin="0,4,0,0" TextWrapping="Wrap"
                                    Visibility="{Binding WarningText, Converter={StaticResource EmptyToCollapsed}}" />
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding IsApplicable, Converter={StaticResource InverseBoolToVis}}">

@@ -63,7 +63,28 @@ public sealed partial class TweakItemViewModel(Tweak tweak) : ObservableObject
     /// <summary>Aviso só para este PC (ex.: notebook gasta mais bateria). Vazio = nada a avisar.</summary>
     [ObservableProperty] private string _warningText = "";
 
-    partial void OnIsApplicableChanged(bool value) { if (!value) IsSelected = false; }
+    partial void OnIsApplicableChanged(bool value) { if (!value) IsSelected = false; OnPropertyChanged(nameof(CanSelect)); }
+
+    /// <summary>Consequências para este PC (inclui o aviso de notebook).</summary>
+    [ObservableProperty] private IReadOnlyList<string> _consequences = tweak.Consequences;
+    public bool HasConsequences => Consequences.Count > 0;
+    partial void OnConsequencesChanged(IReadOnlyList<string> value) => OnPropertyChanged(nameof(HasConsequences));
+
+    /// <summary>Baixo: "O que muda" expansível · Médio: caixa amarela · Alto: caixa vermelha + "Entendi".</summary>
+    public bool ShowLowDetails => HasConsequences && Tweak.Risk == RiskLevel.Low;
+    public bool ShowMediumBox => HasConsequences && Tweak.Risk == RiskLevel.Medium;
+    public bool ShowHighBox => Tweak.Risk == RiskLevel.High;
+    [ObservableProperty] private bool _detailsOpen;
+
+    /// <summary>Risco alto só pode ser selecionado depois de marcar "Entendi as consequências".</summary>
+    [ObservableProperty] private bool _isAcknowledged;
+    partial void OnIsAcknowledgedChanged(bool value) { if (!value) IsSelected = false; OnPropertyChanged(nameof(CanSelect)); }
+    public bool CanSelect => IsApplicable && (Tweak.Risk != RiskLevel.High || IsAcknowledged);
+
+    partial void OnIsSelectedChanged(bool value)
+    {
+        if (value && !CanSelect) IsSelected = false;
+    }
 
     /// <summary>"Aplicado" (pelo app, desfazível no histórico) ou "Já configurado antes do NinjaOptimizer" (o sistema já estava assim).</summary>
     [ObservableProperty] private string _appliedText = "Aplicado";
@@ -257,7 +278,8 @@ public sealed partial class OptimizeViewModel : ObservableObject
             var cond = _engine.CheckConditions(item.Tweak);
             item.IsApplicable = cond.Applicable;
             item.NotApplicableReason = cond.Reason;
-            item.WarningText = _engine.Context.Profile.IsPortable == true ? item.Tweak.PortableWarning ?? "" : "";
+            item.WarningText = "";
+            item.Consequences = item.Tweak.ConsequencesFor(_engine.Context.Profile.IsPortable);
             try { item.IsApplied = await Task.Run(() => _engine.IsAppliedAsync(item.Tweak)); }
             catch (Exception ex) { _log.Error($"Status de {item.Tweak.Id}", ex); }
         }
@@ -295,7 +317,12 @@ public sealed partial class OptimizeViewModel : ObservableObject
     public void SelectByIds(IEnumerable<string> ids)
     {
         var set = ids.ToHashSet();
-        foreach (var item in Items) item.IsSelected = set.Contains(item.Tweak.Id) && item.IsApplicable;
+        foreach (var item in Items)
+        {
+            // Reaberto como administrador: o usuário já tinha marcado "Entendi" para conseguir selecionar.
+            if (set.Contains(item.Tweak.Id) && item.Tweak.Risk == RiskLevel.High) item.IsAcknowledged = true;
+            item.IsSelected = set.Contains(item.Tweak.Id) && item.IsApplicable;
+        }
     }
 
     /// <summary>Chamado quando o resumo de hardware termina de carregar.</summary>
@@ -360,7 +387,7 @@ public sealed partial class OptimizeViewModel : ObservableObject
                 ConfirmHighRisk = high => Task.FromResult(_dialogs.Confirm(
                     "Aplicar ajustes de risco alto?",
                     "Estes ajustes podem desativar recursos do Windows ou causar instabilidade. Continue só se souber o que fazem.",
-                    high.Select(t => $"{t.Name}: {t.Description}").ToList(),
+                    high.SelectMany(t => new[] { t.Name }.Concat(t.ConsequencesFor(_engine.Context.Profile.IsPortable).Select(c => "   • " + c))).ToList(),
                     DialogKind.Danger, "Aplicar mesmo assim", "Pular estes")),
             };
 

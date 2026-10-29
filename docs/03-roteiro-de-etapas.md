@@ -267,6 +267,16 @@ Nova ação `NetAdapterPowerAction`: guarda o valor por `InterfaceGuid`; pula pl
 6. **Reparar a Store**: a Store abre no fim.
 7. **Reparar Windows Update / rede / arquivos do Windows**: confira as pastas `.bak-…` em `C:\Windows`, o arquivo `rede-antes-do-reparo-…txt` nos logs e o resumo do DISM/SFC.
 
+### ✅ H — Avisos de consequências
+
+- `Tweak.Consequences` e `MaintenanceTask.Consequences` (frases curtas, para leigo). `Tweak.ConsequencesFor(portátil)` soma o `PortableWarning` em notebook. `MaintenanceTask.HasSideEffects = false` só para o que só verifica (otimizar unidades, verificar disco).
+- **Interface (Otimizar):** risco Baixo com consequências → "O que muda ▸" expansível; Médio → caixa amarela "Antes de aplicar" sempre visível; Alto → caixa vermelha + **"Entendi as consequências"**, sem o qual o toggle e a seleção em lote não aceitam o item. O diálogo de risco alto do motor lista as consequências de novo. Recomendações do Dashboard nunca sugerem risco alto.
+- **Limpeza e manutenção:** o diálogo de confirmação lista "O que pode acontecer".
+- **Testes obrigatórios:** todo ajuste com risco Médio/Alto tem consequências (`CatalogTests`); toda tarefa de manutenção com efeito tem consequências — novo projeto `tests/NinjaOptimizer.Windows.Tests` constrói o catálogo real do Windows sem executar nada (também roda no `build.ps1`).
+- Preenchido em todos os itens Médios atuais + `services.error-reporting`, prioridade por jogo e todas as tarefas de manutenção.
+
+**Como testar no Windows:** em Otimizar, itens como "Desativar a indexação de pesquisa" mostram a caixa amarela; itens de risco baixo com consequências mostram "O que muda ▸". Em Limpeza, "Esvaziar a Lixeira" lista "Os arquivos da Lixeira são apagados para sempre" no diálogo.
+
 ## Etapa 2 — Catálogo completo de otimizações
 Novas ações no Core: `ScheduledTaskAction`, `PowerSettingAction` (`powercfg /setacvalueindex`), `CommandAction` (aplicar/reverter por comando), `StartupEntryAction`, `NetshAction`, e ações pontuais (não persistentes) para limpeza.
 

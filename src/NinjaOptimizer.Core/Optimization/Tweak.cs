@@ -38,6 +38,16 @@ public sealed class Tweak
 
     public bool RequiresRestart { get; init; }
 
+    /// <summary>
+    /// O que pode acontecer depois de aplicar, em frases curtas para leigo. Obrigatório em risco Médio ou Alto
+    /// (garantido por teste). Mostrado antes de aplicar.
+    /// </summary>
+    public IReadOnlyList<string> Consequences { get; init; } = [];
+
+    /// <summary>Consequências para este PC (soma o aviso de notebook quando for o caso).</summary>
+    public IReadOnlyList<string> ConsequencesFor(bool? portable) =>
+        portable == true && PortableWarning is { } w ? [.. Consequences, w] : Consequences;
+
     /// <summary>Aviso extra mostrado só em notebook (ex.: gasta mais bateria).</summary>
     public string? PortableWarning { get; init; }
 

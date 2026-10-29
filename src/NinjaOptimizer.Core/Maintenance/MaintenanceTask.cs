@@ -24,8 +24,17 @@ public abstract class MaintenanceTask
     public abstract string Description { get; }
     public abstract TweakCategory Category { get; }
 
-    /// <summary>Aviso exibido antes de executar (o que pode acontecer depois).</summary>
+    /// <summary>Aviso curto exibido antes de executar.</summary>
     public virtual string? Note => null;
+
+    /// <summary>
+    /// O que pode acontecer depois (frases curtas para leigo). Obrigatório quando a tarefa apaga algo sem volta
+    /// ou reinicia serviço/PC (garantido por teste).
+    /// </summary>
+    public virtual IReadOnlyList<string> Consequences => [];
+
+    /// <summary>false só para tarefas que não apagam nada e não reiniciam nada (ex.: só verificam).</summary>
+    public virtual bool HasSideEffects => true;
     public virtual bool RequiresAdmin => false;
     /// <summary>Texto curto de duração esperada ("segundos", "alguns minutos").</summary>
     public virtual string Duration => "segundos";
@@ -121,8 +130,10 @@ public static class FolderCleaner
 /// <summary>Limpeza de um conjunto de pastas (temporários, caches).</summary>
 public class FolderCleanupTask(
     string id, string name, string description, TweakCategory category,
-    Func<IEnumerable<string>> folders, TimeSpan minAge, string? note = null, bool requiresAdmin = false) : MaintenanceTask
+    Func<IEnumerable<string>> folders, TimeSpan minAge, string? note = null, bool requiresAdmin = false,
+    IReadOnlyList<string>? consequences = null) : MaintenanceTask
 {
+    public override IReadOnlyList<string> Consequences => consequences ?? [];
     public override string Id => id;
     public override string Name => name;
     public override string Description => description;

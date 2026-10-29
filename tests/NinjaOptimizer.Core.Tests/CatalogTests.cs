@@ -109,5 +109,8 @@ public sealed class CatalogTests : IDisposable
         // Todo perfil tem ajustes, e todo ajuste fora de perfil é uma correção opcional explícita
         foreach (var p in Enum.GetValues<OptimizationProfile>()) Assert.NotEmpty(TweakCatalog.ForProfile(p));
         Assert.All(TweakCatalog.All.Where(t => t.Profiles.Count == 0), t => Assert.True(t.Risk >= RiskLevel.Medium, t.Id));
+        // Risco Médio ou Alto nunca entra sem a lista de consequências (mostrada antes de aplicar)
+        Assert.All(TweakCatalog.All.Where(t => t.Risk >= RiskLevel.Medium), t => Assert.True(t.Consequences.Count > 0, $"{t.Id} sem consequências"));
+        Assert.All(TweakCatalog.All, t => Assert.DoesNotContain("!", string.Concat(t.Consequences)));
     }
 }

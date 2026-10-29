@@ -22,6 +22,9 @@ public static class GamePriority
         Category = TweakCategory.Gaming,
         Risk = RiskLevel.Medium,
         Impact = ImpactLevel.Low,
+        Consequences = priority == CpuPriority.High
+            ? ["Áudio do Discord, OBS e de outros programas pode engasgar enquanto o jogo roda.", "Alguns anti-cheats ignoram ou rebaixam a prioridade."]
+            : ["Outros programas abertos ao mesmo tempo que o jogo recebem um pouco menos de CPU."],
         Actions = [new ProcessPriorityAction(exe, priority)],
     };
 
